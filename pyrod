@@ -1,0 +1,145 @@
+""" PyRod - dynamic molecular interaction fields (dMIFs), based on tracing water molecules in MD simulations.
+
+This is the main script to run PyRod from the command line for analyzing molecular dynamics simulations and generating
+dMIFs and pharmacophores.
+"""
+
+# python standard libraries
+import argparse
+import configparser
+import logging
+import multiprocessing
+import os
+import pickle
+import sys
+import time
+
+# pyrod modules
+try:
+    from pyrod.modules.dmif import dmif
+    from pyrod.modules.lookup import logo, __version__, help_description
+    from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
+    from pyrod.modules.helper_config import main_parameters, grid_parameters, dmif_parameters, \
+        exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters
+    from pyrod.modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing
+    from pyrod.modules.helper_pharmacophore import features_processing, select_features
+    from pyrod.modules.helper_update import update_user, time_to_text
+    from pyrod.modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer
+except ImportError:
+    from modules.dmif import dmif
+    from modules.lookup import logo, __version__, help_description
+    from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
+    from modules.helper_config import main_parameters, grid_parameters, dmif_parameters, exclusion_volume_parameters, \
+        feature_parameters, pharmacophore_parameters, library_parameters
+    from modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing
+    from modules.helper_pharmacophore import features_processing, select_features
+    from modules.helper_update import update_user, time_to_text
+    from modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer
+
+
+if __name__ == '__main__':
+    start_time = time.time()
+    parser = argparse.ArgumentParser(prog='PyRod', description=help_description)
+    parser.add_argument('conf', help='path to configuration file')
+    conf = parser.parse_args().conf
+    update_user('\n'.join(logo))
+    config = configparser.RawConfigParser()
+    config.read(conf)
+    directory = config.get('directory', 'directory')
+    if len(directory) == 0:
+        directory = os.getcwd() + '/pyrod'
+    file_path('pyrod.log', directory)
+    logging.basicConfig(filename='/'.join([directory, 'pyrod.log']), filemode='a',
+                        format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',
+                        level=logging.DEBUG)
+    test_grid_generation, dmif_generation, exclusion_volume_generation, feature_generation, pharmacophore_generation, \
+        library_generation = main_parameters(config)
+    # defining grid
+    if test_grid_generation:
+        center, edge_lengths, space, name = grid_parameters(config)
+        grid = grid_generator(center, edge_lengths, space)
+        pdb_writer(positions=grid, name=name, path=''.join([directory, '/test']))
+        update_user('Writing test grid to {}/test.'.format(directory))
+        sys.exit()
+    # generating dmifs
+    if dmif_generation:
+        center, edge_lengths, space = grid_parameters(config)[:-1]
+        topology, trajectories, traj_number, first_frame, last_frame, length, water_name, metal_names, map_formats, \
+            mp = dmif_parameters(config)
+        update_user('Initializing grid.')
+        grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths, space))
+        args = [(topology, trajectory, counter, length, mp, traj_number, grid_score, grid_partners, first_frame,
+                 last_frame, water_name, metal_names) for counter, trajectory in enumerate(trajectories)]
+        if traj_number > 1:
+            update_user('Analyzing {} trajectories.'.format(traj_number))
+        else:
+            update_user('Analyzing 1 trajectory.')
+        p = multiprocessing.Pool(processes=mp)
+        results = p.starmap(dmif, args, chunksize=1)
+        p.close()
+        p.join()
+        update_user('Processing results.')
+        dmif, partners = dmif_processing(results, traj_number, length)
+        pickle_writer(dmif, 'dmif', '/'.join([directory, 'data']))
+        pickle_writer(partners, 'partners', '/'.join([directory, 'data']))
+        update_user('Writing maps to {}/dmifs.'.format(directory))
+        for map_format in map_formats:
+            for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
+                dmif_writer(dmif, feature_name, file_format=map_format, name=feature_name,
+                            directory='/'.join([directory, 'dmifs']))
+    # generating exclusion volumes
+    if exclusion_volume_generation:
+        if len(config.get('exclusion volume parameters', 'dmif')) > 0:
+            update_user('Loading dmif from {}.'.format(config.get('exclusion volume parameters', 'dmif')))
+            dmif = pickle.load(open(config.get('exclusion volume parameters', 'dmif'), 'rb'))
+        ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius = exclusion_volume_parameters(config)
+        evs = exclusion_volume_generator(dmif, shape_minimum_cutoff=shape_min_cutoff,
+                                         shape_maximum_cutoff=shape_max_cutoff, shape_radius=shape_radius,
+                                         exclusion_volume_radius=ev_radius, exclusion_volume_space=ev_space)
+        pickle_writer(evs, 'exclusion_volumes', '/'.join([directory, 'data']))
+    # generating features
+    if feature_generation:
+        if len(config.get('feature parameters', 'dmif')) > 0:
+            update_user('Loading dmif from {}.'.format(config.get('feature parameters', 'dmif')))
+            dmif = pickle.load(open(config.get('feature parameters', 'dmif'), 'rb'))
+        if len(config.get('feature parameters', 'partners')) > 0:
+            update_user('Loading partner from {}.'.format(config.get('feature parameters', 'partners')))
+            partners = pickle.load(open(config.get('feature parameters', 'partners'), 'rb'))
+        feature_names, ionizable_feature_placement, features_per_feature_type, mp = feature_parameters(config)
+        args = [(dmif, partners, feature_name, ionizable_feature_placement, features_per_feature_type) for feature_name
+                in feature_names]
+        update_user('Generating features.')
+        p = multiprocessing.Pool(processes=mp)
+        results = p.starmap(features_generator, args, chunksize=1)
+        p.close()
+        p.join()
+        features = features_processing(results, features_per_feature_type)
+        pickle_writer(features, 'features', '/'.join([directory, 'data']))
+    # pharmacophore generation
+    if pharmacophore_generation:
+        if len(config.get('pharmacophore parameters', 'features')) > 0:
+            update_user('Loading features from {}.'.format(config.get('pharmacophore parameters', 'features')))
+            features = pickle.load(open(config.get('pharmacophore parameters', 'features'), 'rb'))
+        if len(config.get('pharmacophore parameters', 'exclusion volumes')) > 0:
+            update_user('Loading exclusion volumes from {}.'.format(config.get('pharmacophore parameters',
+                                                                               'exclusion volumes')))
+            evs = pickle.load(open(config.get('pharmacophore parameters', 'exclusion volumes'), 'rb'))
+        pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number = \
+            pharmacophore_parameters(config)
+        pharmacophore_directory = '/'.join([directory, 'pharmacophores'])
+        for pharmacophore_format in pharmacophore_formats:
+            if all_features:
+                update_user('Writing {} pharmacophore with all features to {}.'.format(pharmacophore_format,
+                                                                                       pharmacophore_directory))
+                pharmacophore_writer(features + evs, pharmacophore_format, 'all', pharmacophore_directory, weight)
+            if best_features:
+                selected_features = select_features(features, hbs_number, his_number, iis_number)
+                update_user('Writing {} pharmacophore with {} features to {}.'.format(pharmacophore_format,
+                                                                                      len(selected_features),
+                                                                                      pharmacophore_directory))
+                pharmacophore_writer(selected_features + evs, pharmacophore_format, best_name, pharmacophore_directory,
+                                     weight)
+    # library generation
+    if library_generation:
+        library_generator(*library_parameters(config, directory))
+    update_user('Finished after {}.'.format(time_to_text(time.time() - start_time)))

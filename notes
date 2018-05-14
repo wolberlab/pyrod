@@ -1,0 +1,148 @@
+pyrod --top /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/0/topology.pdb --tra /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/0/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/1/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/2/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/3/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/4/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/5/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/6/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/7/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/8/trajectory.dcd /mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/9/trajectory.dcd --x 0 --y 0 --z 10 --lex 30 --ley 30 --lez 30 --first 1001 --last 2000 --space 0.5 --water T4P --cpu 2 --out /home/david/Documents/pyrod/4N6H
+
+pyrod --top /mdspace/david/desmond/1ke7/topology.pdb --tra /mdspace/david/desmond/1ke7/trajectory.dcd --x 0 --y 0 --z 0 --lex 80 --ley 80 --lez 80 --first 0 --last 300 --space 0.5 --water T4P --cpu 1 --out /mdspace/david/desmond/1ke7
+
+import sys
+sys.path.insert(0, '/mdspace/pyrod/bin/lib/MDAnalysis-0.15.0-py2.7-linux-x86_64.egg')
+
+
+import MDAnalysis as md
+u = md.Universe('/mdspace/david/desmond/1ke7/desmond_md_job_1/0/topology_test.gro', '/mdspace/david/desmond/1ke7/desmond_md_job_1/0/trajectory_test.dcd')
+atoms = u.select_atoms('protein')
+atoms.wrap(compound='residues', center='com')
+
+import pickle
+dmif = pickle.load(open('/mdspace/pyrod/examples/1ke7/pyrod/data/dmif.p', 'rb'), encoding='latin1')
+partners = pickle.load(open('/mdspace/pyrod/examples/1ke7/pyrod/data/partners.p', 'rb'), encoding='latin1')
+features = pickle.load(open('/mdspace/pyrod/examples/test/pyrod/data/features.p', 'rb'))
+
+
+topology = '/mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/0/topology.pdb'
+trajectory = '/mdspace/david/desmond/new/4N6H/4N6H_wo_t4p_gpu/0/trajectory.dcd'
+counter = 0
+length = 999
+processes = 1
+traj_number = 1
+grid_score, grid_lists = grid_gen(0,0,10,30,30,30,0.5)
+first_frame = 1001
+last_frame = 2000
+water_name = 'T4P'
+out = '/home/david/Desktop/test'
+
+
+
+    |id| type | [x, y, z] |tolerance|[[x_i,y_i,z_i]]|tolerance_i|score|volume|
+ 0   0    hi     origin      (1.5)         -              -
+ 1   1    pi     origin      (1.5)         -              -
+ 2   2    ni     origin      (1.5)         -              -
+ 3   3    hd     origin      (1.5)       target      (1.9499999)
+ 4   4    ha     target   (1.9499999)    origin         (1.5)
+ 5   5    hd2    origin      (1.5)      tar, tar     (1.9499999) 
+ 6   6    ha2    target   (1.9499999)   ori, ori        (1.5)
+ 7   7    hda    oritar        ~        tar, ori          ~
+ 8   8    ev     origin                   -              -
+(5   5    ai     origin       0.9        normal      0.43633232        )
+*each hb as own feature (hd2, ha2, hda consist of 2 features)
+*feature coors on ligand site are defined by local maxima of score, local maxima need radius from vdwradii_dict
+*each lower order hb feature (ha, hd) is checked for local maxima of higher order hb features (hd2, ha2, hda)
+*feature coors on protein site are taken from local maxima voxel
+
+
+log_file = open(os.getcwd() + '/' + out + '/log/trajectory_' + str(counter + 1) + '.log', 'w')
+log_file.write('frame ' + str(frame) + '\n')
+
+
+import time
+
+if 1 > 0:
+    for x in range(2, len(hi_atoms)):
+        start = time.time()
+        y = buriedness(o_coor, positions[hi_atoms.iloc[hi_list[0:x]].index], 10)
+        print(x)
+        print(time.time() -start)
+
+
+import cPickle as pickle
+dmif = pickle.load(open('/home/david/Documents/pyrod/4n6h/data/dmif.p', 'rb'))
+partners = pickle.load(open('/home/david/Documents/pyrod/4n6h/data/partners.p', 'rb'))
+features = pickle.load(open('/home/david/Documents/pyrod/4n6h/data/features.p', 'rb'))
+
+dmif2 = np.array(dmif)
+
+dmif2['hi'] = np.divide(dmif2['hi'], dmif2['shape'], where=dmif2['shape']>=1)
+
+dmif2['hi'][dmif2['shape']<10] = 0
+dmif2['hi'] = np.divide(dmif2['hi'], dmif2['shape'], where=dmif2['shape']>=10)
+write_dmif(copy.deepcopy(dmif2), 'hi', dmif_format='xplor', name='hi_norm', directory='/mdspace/david/desmond/1ke7/pyrod', norm=False)
+write_dmif(copy.deepcopy(dmif2), 'hi', dmif_format='kont', name='hi_norm', directory='/mdspace/david/desmond/1ke7/pyrod', norm=False)
+
+features_df = pd.DataFrame(features, columns=['id', 'type', 'pos1', 'tol1', 'pos2', 'tol2', 'score'])
+for x in features_df.loc[features_df.index[features_df['type'] == 'hd']].sort_values
+
+features_sorted = []
+
+for x in range(20):
+    features_sorted.append(features_df.loc[features_df.index[(features_df['type'] == 'hd') | (features_df['type'] == 'ha') | (features_df['type'] == 'hd2') | (features_df['type'] == 'ha2') | (features_df['type'] == 'hda')]].sort_values(by=['score'], ascending=False).values[x])
+
+for x in range(6):
+    features_sorted.append(features_df.loc[features_df.index[(features_df['type'] == 'pi') | (features_df['type'] == 'ni')]].sort_values(by=['score'], ascending=False).values[x])
+
+for x in range(20):
+    features_sorted.append(features_df.loc[features_df.index[(features_df['type'] == 'hi')]].sort_values(by=['score'], ascending=False).values[x])
+
+for x in features_df.loc[features_df.index[(features_df['type'] == 'ev')]].values:
+    features_sorted.append(x)
+
+pml_writer(features_sorted, '4n6h', '/home/david/Documents/pyrod/4N6H')
+
+if 1 > 0:
+    counter = 0
+    hb_min = None
+    hb_max = None
+    hb_score_list = []
+    for position, [ind, row] in zip(positions, df.iterrows()):
+        hb_inds = tree.query_ball_point(position, r=1.5)
+	for hb in hbs:
+            hb_max_tmp = df_hb.loc[hb_inds, hb].values.max()
+            if hb_max_tmp > 0:
+                if row[hb] == hb_max_tmp:
+                    print(hb)
+                    print(ind)
+                    print(row[hb])
+                    hb_score_list.append(round(row[hb], 1))
+                    counter += 1
+                    if hb_max == None:
+                        hb_max = row[hb]
+                    elif hb_max < row[hb]:
+                        hb_max = row[hb]
+                    if hb_min == None:
+                        hb_min = row[hb]
+                    elif hb_min > row[hb]:
+                        hb_min = row[hb]
+    print('number of features: ' + str(counter))
+    print('maximum score of feature: ' + str(hb_max))
+    print('minimum score of feature: ' + str(hb_min))
+    sorted(hb_score_list)
+
+max_dict = {'hd': 14084, 'ha': 135312, 'hd2': 6138, 'ha2': None, 'hda': 8945}
+
+
+
+print(
+'                      |X|              \n' +
+'            |X|   )__)  |              \n' +
+'             )_)  )___) ))             \n' +
+'            )___) )____))_)            \n' +
+'       _    )____)_____))__)\          \n' +
+'        \---__|____/|___|___-\\---     \n' +
+'~~~~~~~~~\   oo  oo  oo  oo  /~~~~~~~~~\n' +
+'  ~~~~~~~~~~~~~~~~~~     ~~~~~~    ~~  \n' +
+'     ~~~~      ~~~~     ~~    ~~~~~    \n' +
+'           ~~~~     ~~    ~~~~         \n' +
+'              PyRod v. 0.5'
+)
+
+
+
+
+
