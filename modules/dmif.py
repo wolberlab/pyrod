@@ -205,8 +205,6 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                             grid_score['hi'][inds] += hi
                         if ha + hd > 0:
                             grid_score['hi_hb'][inds] += hi
-                        # else:
-                        #     grid_score['hi'][inds] += hi
                     # aromatic interaction missing
         # adding scores to grid
         grid_score['shape'][shape_inds] += 1

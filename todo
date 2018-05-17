@@ -1,6 +1,4 @@
-get parameters for dist_dict, angl_dict from csd
-
-switch pandas to numpy
+get parameters for dist_dict, angl_dict from csd?
 
 additional functionality:
  - ar for aromatic interactions
@@ -11,26 +9,13 @@ additional functionality:
     TRP: -0.57 - 0.115 - 0.055 + 0.075 + 0.13 = -0.685
          4 * -0.115 - 0.055 + 0.13 = -0.385
 
-pharmacophores:
- - combinatorial library
-   - limitation via max features
-   - filtering via max_dis to geometric center
- - radius of hi, pi, ni
-   - based on local minima
-     - clip 0.000001
- - scoring pharmacophores via analyzing best (30) features in md
+hi features
+ - hydrogen bonded water molecules will have increased hi because of their high occupancy, compared to free water
+   molecules
+ - hi_nohb?
+ - hi divided by shape for grid points with shape score higher 10?
 
-# list of lists to structured numpy array
-    #grid = np.array([tuple(x) for x in grid], dtype=[(x[0], 'O') for x in
-    #                sorted([[x, grid_dict[x]] for x in grid_dict.keys()], key=operator.itemgetter(1))])
-    # clipping ionic interactions to minimum 0
+hb features
+ - adding hd2a, hda2, hd2a2 for maps?
 
-
-Do features exist with very high score but tolerance below 1.0?
---> yes
-
-put config parameters into seperate function
-
-Should hydrophobicity only be calculated for water molecules not involved in a hydrogen bond?
---> yes (hydrogen bonded water molecules will have increased hi because of their high occupancy, compared to free water
-         molecules)
+logging

@@ -82,12 +82,9 @@ def dmif_parameters(config):
     water_name = config.get('dmif parameters', 'water name')
     metal_names = [x.strip() for x in config.get('dmif parameters', 'metal names').split(',')]
     map_formats = [x.strip() for x in config.get('dmif parameters', 'map formats').split(',')]
-    mp = config.get('dmif parameters', 'multiprocessing')
-    if mp == 'true':
-        if multiprocessing.cpu_count() > traj_number:
-            mp = traj_number
-        else:
-            mp = multiprocessing.cpu_count()
+    mp = config.get('dmif parameters', 'number of processes')
+    if len(mp) > 0:
+        mp = int(mp)
     else:
         mp = 1
     return [topology, trajectories, traj_number, first_frame, last_frame, length, water_name, metal_names, map_formats,
@@ -108,12 +105,9 @@ def feature_parameters(config, feature_names=feature_names):
     if ionizable_feature_placement == 'hbonds':
         feature_names = [x for x in feature_names if x not in ['pi', 'ni']]
     features_per_feature_type = 20
-    mp = config.get('feature parameters', 'multiprocessing')
-    if mp == 'true':
-        if multiprocessing.cpu_count() > len(feature_names):
-            mp = len(feature_names)
-        else:
-            mp = multiprocessing.cpu_count()
+    mp = config.get('feature parameters', 'number of processes')
+    if len(mp) > 0:
+        mp = int(mp)
     else:
         mp = 1
     return [feature_names, ionizable_feature_placement, features_per_feature_type, mp]

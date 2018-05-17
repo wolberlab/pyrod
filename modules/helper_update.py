@@ -75,6 +75,7 @@ def update_progress_dmif_parameters(counter, length_trajectory, number_processes
         check_progress = True
     if (counter + 1) % number_trajectories == 0:
         final = True
+        check_progress = True
     return [check_progress, final, past_frames, future_frames]
 
 
