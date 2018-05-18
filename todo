@@ -1,21 +1,8 @@
 get parameters for dist_dict, angl_dict from csd?
 
-additional functionality:
- - ar for aromatic interactions
- - pi-cation
-    partial charges from OPLS 2005
-    PHE: 6 * -0.115 = -0.69
-    TYR: 5 * -0.115 + 0.15 = -0.54
-    TRP: -0.57 - 0.115 - 0.055 + 0.075 + 0.13 = -0.685
-         4 * -0.115 - 0.055 + 0.13 = -0.385
-
-hi features
- - hydrogen bonded water molecules will have increased hi because of their high occupancy, compared to free water
-   molecules
- - hi_nohb?
- - hi divided by shape for grid points with shape score higher 10?
-
-hb features
- - adding hd2a, hda2, hd2a2 for maps?
+improve exclusion volume placement
+  - create empty list with filtered exclusion volumes
+  - with distance in 2 A steps starting at 2
+    - find exclusion volumes within distance via tree query
 
 logging
