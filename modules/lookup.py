@@ -13,7 +13,7 @@ grid_score_dict = {'x': 0, 'y': 1, 'z': 2, 'shape': 3, 'ha': 4, 'hd': 5, 'ha2': 
 grid_list_dict = {'ha_i': 0, 'hd_i': 1, 'ha2_i': 2, 'hd2_i': 3, 'hda_ia': 4, 'hda_id': 5}
 hb_dist_dict = {'O': 3.2, 'N': 3.3, 'S': 3.9}
 hb_angl_dict = {'O': 130, 'N': 130, 'S': 130}
-sel_cutoff_dict = {'hb': 4, 'hi': 5, 'ii': 6, 'metal': 3}
+sel_cutoff_dict = {'hb': 4, 'hi': 5, 'ii': 6, 'ai': 6, 'metal': 3}
 hi_sel_dict = {'ALA': ['CB'], 'ARG': ['CB', 'CG'], 'ASN': ['CB'], 'ASP': ['CB'], 'GLN': ['CB', 'CG'],
                'GLU': ['CB', 'CG'], 'HIS': ['CB'], 'ILE': ['CB', 'CG1', 'CD1', 'CG2'],
                'LEU': ['CB', 'CG', 'CD1', 'CD2'], 'LYS': ['CB', 'CG', 'CD'], 'MET': ['CB', 'CG', 'SD', 'CE'],
@@ -22,6 +22,9 @@ hi_sel_dict = {'ALA': ['CB'], 'ARG': ['CB', 'CG'], 'ASN': ['CB'], 'ASP': ['CB'],
                'VAL': ['CB', 'CG1', 'CG2']}
 pi_sel_dict = {'ASP': ['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
 ni_sel_dict = {'ARG': ['CZ'], 'LYS': ['NZ']}
+ai_sel_dict = {'HIS': [['CG', 'CD2', 'CE1']], 'HSD': [['CG', 'CD2', 'CE1']], 'HSE': [['CG', 'CD2', 'CE1']],
+               'HSP': [['CG', 'CD2', 'CE1']], 'PHE': [['CG', 'CE1', 'CE2']],
+               'TRP': [['CG', 'CD2', 'NE1'], ['CE2', 'CE3', 'CH2']], 'TYR': [['CG', 'CE1', 'CE2']]}
 don_hydrogen_dict = {'ALA': {'N': ['H']},
                      'ARG': {'N': ['H'], 'NE': ['HE'], 'NH1': ['HH11', 'HH12'], 'NH2': ['HH21', 'HH22']},
                      'ASN': {'N': ['H'], 'ND2': ['HD21', 'HD22']}, 'ASP': {'N': ['H']},

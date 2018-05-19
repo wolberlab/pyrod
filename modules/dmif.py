@@ -18,15 +18,15 @@ try:
     from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
         sel_cutoff_dict
     from pyrod.modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
-        select_pi_atoms, select_metal_atoms, buriedness, grid_parameters, grid_partners_to_array
-    from pyrod.modules.helper_math import distance, angle
+        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, grid_parameters, grid_partners_to_array
+    from pyrod.modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
     from pyrod.modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
         sel_cutoff_dict
     from modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
-        select_pi_atoms, select_metal_atoms, buriedness, grid_parameters, grid_partners_to_array
-    from modules.helper_math import distance, angle
+        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, grid_parameters, grid_partners_to_array
+    from modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
     from modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
 
 
@@ -52,6 +52,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
     hi_atoms = select_hi_atoms(protein)
     pi_atoms = select_pi_atoms(protein)
     ni_atoms = select_ni_atoms(protein)
+    #ai_atoms = select_ai_atoms(protein)
     metal_atoms = select_metal_atoms(topology, metal_names)
     # ai missing
     start = time.time()
@@ -63,6 +64,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
         hd_inds = []
         hd2_inds = []
         hda_inds = []
+        #ai_inds = []
         tw_inds = []
         positions = u.atoms.positions
         h2os_os_box_inds = topology[((topology['resname'] == water_name) & (topology['name'] == 'O') &
@@ -72,43 +74,52 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
         if len(h2os_os_box_inds) > 0:
             tree_h2os = cKDTree(positions[h2os_os_box_inds])
             if len(hb_atoms) > 0:
-                tree_hb = cKDTree(positions[hb_atoms['atomid']])
-                hb_lists = tree_h2os.query_ball_tree(tree_hb, sel_cutoff_dict['hb'])
+                hb_lists = tree_h2os.query_ball_tree(cKDTree(positions[hb_atoms['atomid']]), sel_cutoff_dict['hb'])
             else:
                 hb_lists = [[]] * len(h2os_os_box_inds)
             if len(hi_atoms) > 0:
-                tree_hi = cKDTree(positions[hi_atoms['atomid']])
-                hi_lists = tree_h2os.query_ball_tree(tree_hi, sel_cutoff_dict['hi'])
+                hi_positions = positions[hi_atoms['atomid']]
+                hi_lists = tree_h2os.query_ball_tree(cKDTree(hi_positions), sel_cutoff_dict['hi'])
             else:
                 hi_lists = [[]] * len(h2os_os_box_inds)
             if len(pi_atoms) > 0:
-                tree_pi = cKDTree([((x + y) / 2) for x, y in
-                                  zip(positions[pi_atoms['atomid'][::2]], positions[pi_atoms['atomid'][1::2]])])
-                pi_lists = tree_h2os.query_ball_tree(tree_pi, sel_cutoff_dict['ii'])
+                pi_positions = [((x + y) / 2) for x, y in zip(positions[pi_atoms['atomid'][::2]],
+                                                              positions[pi_atoms['atomid'][1::2]])]
+                pi_lists = tree_h2os.query_ball_tree(cKDTree(pi_positions), sel_cutoff_dict['ii'])
             else:
                 pi_lists = [[]] * len(h2os_os_box_inds)
             if len(ni_atoms) > 0:
-                tree_ni = cKDTree([((x + y) / 2) for x, y in
-                                   zip(positions[ni_atoms['atomid'][::2]], positions[ni_atoms['atomid'][1::2]])])
-                ni_lists = tree_h2os.query_ball_tree(tree_ni, sel_cutoff_dict['ii'])
+                ni_positions = [((x + y) / 2) for x, y in zip(positions[ni_atoms['atomid'][::2]],
+                                                              positions[ni_atoms['atomid'][1::2]])]
+                ni_lists = tree_h2os.query_ball_tree(cKDTree(ni_positions), sel_cutoff_dict['ii'])
             else:
                 ni_lists = [[]] * len(h2os_os_box_inds)
+            #if len(ai_atoms) > 0:
+            #    ai_positions = [((x + y + z) / 3) for x, y, z in zip(positions[ai_atoms['atomid'][::3]],
+            #                                                         positions[ai_atoms['atomid'][1::3]],
+            #                                                         positions[ai_atoms['atomid'][2::3]])]
+            #    ai_normals = [normal(a, b, c) for a, b, c in zip(positions[ai_atoms['atomid'][::3]], ai_positions,
+            #                                                    positions[ai_atoms['atomid'][2::3]])]
+            #    ai_lists = tree_h2os.query_ball_tree(cKDTree(ai_positions), sel_cutoff_dict['ai'])
+            #else:
+            #    ai_lists = [[]] * len(h2os_os_box_inds)
             if len(metal_atoms) > 0:
-                tree_metal = cKDTree(positions[metal_atoms['atomid']])
-                metal_lists = tree_h2os.query_ball_tree(tree_metal, sel_cutoff_dict['metal'])
+                metal_positions = positions[metal_atoms['atomid']]
+                metal_lists = tree_h2os.query_ball_tree(cKDTree(metal_positions), sel_cutoff_dict['metal'])
             else:
                 metal_lists = [[]] * len(h2os_os_box_inds)
         else:
             h2os_os_box_inds, hb_lists, hi_lists, pi_lists, ni_lists, metal_lists = [], [], [], [], [], []
-        for o_ind, hb_list, hi_list, pi_list, ni_list, metal_list in zip(h2os_os_box_inds, hb_lists, hi_lists,
-                                                                         pi_lists, ni_lists, metal_lists):
-            ha, ha_i, hd, hd_i, hi, pi, ni, ai, ai_i = 0, [], 0, [], 0, 0, 0, 0, []
+        for o_ind, hb_list, hi_list, pi_list, ni_list, metal_list in \
+                zip(h2os_os_box_inds, hb_lists, hi_lists, pi_lists, ni_lists, metal_lists):
+            ha, ha_i, hd, hd_i, hi, pi, ni, ai, ai_i, ai_n = 0, [], 0, [], 0, 0, 0, 0, [], []
             o_coor, h1_coor, h2_coor = positions[o_ind], positions[o_ind + 1], positions[o_ind + 2]
             # hydrogen bonds
             for hb_ind in hb_list:
                 hb_atom = hb_atoms[hb_ind]
                 hb_coor, hb_resname, hb_resid, hb_name, hb_type = [positions[hb_atom['atomid']], hb_atom['resname'],
-                                                                   hb_atom['resid'], hb_atom['name'], hb_atom['type']]
+                                                                   hb_atom['resid'], hb_atom['name'],
+                                                                   hb_atom['type']]
                 if distance(o_coor, hb_coor) <= hb_dist_dict[hb_type]:
                     if hb_name in acceptors:
                         for h_coor in [h1_coor, h2_coor]:
@@ -118,8 +129,9 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     if hb_resname in don_hydrogen_dict.keys():
                         if hb_name in don_hydrogen_dict[hb_resname].keys():
                             for h_name in don_hydrogen_dict[hb_resname][hb_name]:
-                                h_inds = protein[((protein['resname'] == hb_resname) & (protein['resid'] == hb_resid) &
-                                                 (protein['name'] == h_name))]['atomid']
+                                h_inds = protein[((protein['resname'] == hb_resname) &
+                                                  (protein['resid'] == hb_resid) &
+                                                  (protein['name'] == h_name))]['atomid']
                                 if len(h_inds) > 0:
                                     min_dis_ind = 0
                                     # if multiple hydrogen atoms met the selection criteria above, e.g. multimers
@@ -133,12 +145,13 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                                     if angle(hb_coor, h_coor, o_coor) >= hb_angl_dict[hb_type]:
                                         ha += 1
                                         ha_i.append(hb_coor)
+            # metals
             for metal_ind in metal_list:
-                metal_coor = positions[metal_atoms[metal_ind]['atomid']]
+                metal_position = metal_positions[metal_ind]
                 ha += 1
-                ha_i.append(metal_coor)
-                ni += 2.6 / distance(o_coor, metal_coor)
-            # indices of voxels close to water
+                ha_i.append(metal_position)
+                ni += 2.6 / distance(o_coor, metal_position)
+            # indices of points close to water
             inds = tree.query_ball_point(o_coor, r=1.41)
             # trapped water molecules
             if hd + ha > 2:
@@ -147,19 +160,31 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
             else:
                 # negative ionizable
                 for ni_ind in ni_list:
-                    ni += 2.6 / distance(o_coor, positions[ni_atoms[ni_ind]['atomid']])
+                    ni += 2.6 / distance(o_coor, ni_positions[ni_ind])
                 # positive ionizable
                 for pi_ind in pi_list:
-                    pi += 2.6 / distance(o_coor, positions[pi_atoms[pi_ind]['atomid']])
+                    pi += 2.6 / distance(o_coor, pi_positions[pi_ind])
                 # hydrophobic interactions
                 if len(hi_list) > 0:
                     hi += 1
                     if len(hi_list) > 1:
-                        hi += buriedness(o_coor, positions[hi_atoms[hi_list]['atomid']])
+                        hi += buriedness(o_coor, hi_positions[hi_list])
+                # aromatic interactions
+                #for ai_ind in ai_inds:
+                #    ai_i = ai_positions[ai_ind]
+                #    ai_n = ai_normals[ai_ind]
+                #    for ind in inds:
+                #        grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
+                #        if distance(grid_point, ai_i) <= 5.5:
+                #            c = [ai_i[0] - grid_point[0], ai_i[1] - grid_point[1],
+                #                                        ai_i[2] - grid_point[2]]
+                #            alpha = vector_angle(ai_n, c)
+                #            if opposite(alpha, norm(c)) <= 2:
+                #                asdaf
                 # get grid points close to water molecule
                 shape_inds += inds
                 # check if water molecule is involved in any interactions
-                if ha + hd + hi + pi + ni + ai > 0:
+                if ha + hd + hi + pi + ni > 0:
                     # adding score to grid
                     if hd == 0:
                         # single

@@ -44,6 +44,35 @@ def angle(a, b, c):
     return np.degrees(np.arctan2(sine_angle, cosine_angle))
 
 
+def vector_angle(a, b):
+    """ This function returns the angle in degrees between 2 vectors. """
+    cosine_angle = np.dot(a, b)
+    sine_angle = np.linalg.norm(np.cross(a, b))
+    return np.degrees(np.arctan2(sine_angle, cosine_angle))
+
+
+def normal(a, b, c):
+    """ This function returns the normal of a plane defined by 3 points with b as the origin of the normal. """
+    ba = [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+    bc = [c[0] - b[0], c[1] - b[1], c[2] - b[2]]
+    n = [ba[1] * bc[2] - ba[2] * bc[1],
+         ba[2] * bc[0] - ba[0] * bc[2],
+         ba[0] * bc[1] - ba[1] * bc[0]]
+    return n
+
+
+def norm(vector):
+    """ This function returns the length of a vector. """
+    return ((vector[0] ** 2) + (vector[1] ** 2) + (vector[2] ** 2)) ** 0.5
+
+
+def opposite(alpha, c):
+    """ This function returns the length of opposite a in a rectangular triangle by using angle alpha and the length of
+    hypotenuse c. """
+    a = np.sin(alpha) * c
+    return a
+
+
 def maximal_angle(positions, center_position, origin_position=None):
     """ This function returns the maximal angle of all possible position combinations with the center_position as
     vertex of the angle and the indices of the involved positions. If origin_position is given, angles to be compared

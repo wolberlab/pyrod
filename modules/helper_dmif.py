@@ -13,12 +13,12 @@ import numpy.lib.recfunctions as rfn
 
 # pyrod modules
 try:
-    from pyrod.modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, grid_score_dict, \
-        grid_list_dict
+    from pyrod.modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
+        grid_score_dict, grid_list_dict
     from pyrod.modules.helper_math import angle, maximal_angle
 except ImportError:
-    from modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, grid_score_dict, \
-        grid_list_dict
+    from modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
+        grid_score_dict, grid_list_dict
     from modules.helper_math import angle, maximal_angle
 
 
@@ -158,6 +158,22 @@ def select_ni_atoms(protein):
                 selection = his_atom
             else:
                 selection = np.concatenate((selection, np.array([his_atom])), axis=0)
+    if len(selection) > 1:
+        selection.sort(order='atomid')
+    return selection
+
+
+def select_ai_atoms(protein):
+    """ This function returns atoms for defining aromatic centers from a topology. """
+    selection = ''
+    for resname in ai_sel_dict.keys():
+        for aromatic_ring in ai_sel_dict[resname]:
+            for name in aromatic_ring:
+                if len(selection) == 0:
+                    selection = protein[(protein['resname'] == resname) & (protein['name'] == name)]
+                else:
+                    selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
+                                                                   (protein['name'] == name)]), axis=0)
     if len(selection) > 1:
         selection.sort(order='atomid')
     return selection
