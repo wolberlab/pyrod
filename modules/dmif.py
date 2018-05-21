@@ -74,7 +74,12 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
         if len(h2os_os_box_inds) > 0:
             tree_h2os = cKDTree(positions[h2os_os_box_inds])
             if len(hb_atoms) > 0:
-                hb_lists = tree_h2os.query_ball_tree(cKDTree(positions[hb_atoms['atomid']]), sel_cutoff_dict['hb'])
+                hb_positions = positions[hb_atoms['atomid']]
+                hb_resnames = hb_atoms['resname']
+                hb_resids = hb_atoms['resid']
+                hb_names = hb_atoms['name']
+                hb_types = hb_atoms['type']
+                hb_lists = tree_h2os.query_ball_tree(cKDTree(hb_positions), sel_cutoff_dict['hb'])
             else:
                 hb_lists = [[]] * len(h2os_os_box_inds)
             if len(hi_atoms) > 0:
@@ -116,10 +121,9 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
             o_coor, h1_coor, h2_coor = positions[o_ind], positions[o_ind + 1], positions[o_ind + 2]
             # hydrogen bonds
             for hb_ind in hb_list:
-                hb_atom = hb_atoms[hb_ind]
-                hb_coor, hb_resname, hb_resid, hb_name, hb_type = [positions[hb_atom['atomid']], hb_atom['resname'],
-                                                                   hb_atom['resid'], hb_atom['name'],
-                                                                   hb_atom['type']]
+                hb_coor, hb_resname, hb_resid, hb_name, hb_type = [hb_positions[hb_ind], hb_resnames[hb_ind],
+                                                                   hb_resids[hb_ind], hb_names[hb_ind],
+                                                                   hb_types[hb_ind]]
                 if distance(o_coor, hb_coor) <= hb_dist_dict[hb_type]:
                     if hb_name in acceptors:
                         for h_coor in [h1_coor, h2_coor]:

@@ -80,6 +80,7 @@ if __name__ == '__main__':
         p.join()
         update_user('Processing results.')
         dmif, partners = dmif_processing(results, traj_number, length)
+        del results
         pickle_writer(dmif, 'dmif', '/'.join([directory, 'data']))
         pickle_writer(partners, 'partners', '/'.join([directory, 'data']))
         update_user('Writing maps to {}/dmifs.'.format(directory))
