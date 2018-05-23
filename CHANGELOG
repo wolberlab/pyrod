@@ -1,0 +1,9 @@
+*
+ - renamed changes to CHANGELOG
+ - small changes
+* v0.6.0
+ - added aromatic interactions
+ - corrected error for calculation of charged interactions
+ - small changes
+* v0.5.0
+ - initial release for github 
