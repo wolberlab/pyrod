@@ -45,10 +45,10 @@ def angle(a, b, c):
 
 
 def vector_angle(a, b):
-    """ This function returns the angle in degrees between 2 vectors. """
+    """ This function returns the angle in rad between 2 vectors. """
     cosine_angle = np.dot(a, b)
     sine_angle = np.linalg.norm(np.cross(a, b))
-    return np.degrees(np.arctan2(sine_angle, cosine_angle))
+    return np.arctan2(sine_angle, cosine_angle)
 
 
 def normal(a, b, c):
@@ -71,6 +71,13 @@ def opposite(alpha, c):
     hypotenuse c. """
     a = np.sin(alpha) * c
     return a
+
+
+def adjacent(alpha, c_length):
+    """ This function returns the length of adjacent b in a rectangular triangle by using angle alpha and the length of
+        hypotenuse c. """
+    b_length = np.cos(alpha) * c_length
+    return b_length
 
 
 def maximal_angle(positions, center_position, origin_position=None):

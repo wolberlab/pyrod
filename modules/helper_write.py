@@ -238,12 +238,42 @@ def pml_feature_volume(pharmacophore, feature):
     return
 
 
+def pml_feature_plane(pharmacophore, feature, weight):
+    """ This function generates an xml branch for aromatic interactions. """
+    plane_name = 'AR'
+    plane_featureId = str(feature[0])
+    plane_optional = 'false'
+    plane_disabled = 'false'
+    if weight:
+        plane_weight = str(feature[6])
+    else:
+        plane_weight = '1.0'
+    position_x3 = str(feature[2][0])
+    position_y3 = str(feature[2][1])
+    position_z3 = str(feature[2][2])
+    position_tolerance = str(feature[3])
+    normal_x3 = str(feature[2][0] - feature[4][0][0])
+    normal_y3 = str(feature[2][1] - feature[4][0][1])
+    normal_z3 = str(feature[2][2] - feature[4][0][2])
+    normal_tolerance = '0.43633232'
+    plane_attributes = {'name': plane_name, 'featureId': plane_featureId, 'optional': plane_optional,
+                        'disabled': plane_disabled, 'weight': plane_weight}
+    plane = et.SubElement(pharmacophore, 'plane', attrib=plane_attributes)
+    position_attributes = {'x3': position_x3, 'y3': position_y3, 'z3': position_z3, 'tolerance': position_tolerance}
+    et.SubElement(plane, 'position', attrib=position_attributes)
+    normal_attributes = {'x3': normal_x3, 'y3': normal_y3, 'z3': normal_z3, 'tolerance': normal_tolerance}
+    et.SubElement(plane, 'normal', attrib=normal_attributes)
+    return
+
+
 def pml_feature(pharmacophore, feature, weight):
     """ This function distributes features according to their feature type to the appropriate feature function. """
     if feature[1] in ['hi', 'ni', 'pi']:
         pml_feature_point(pharmacophore, feature, weight)
     elif feature[1] in ['hd', 'hd2', 'ha', 'ha2', 'hda']:
         pml_feature_vector(pharmacophore, feature, weight)
+    elif feature[1] == 'ai':
+        pml_feature_plane(pharmacophore, feature, weight)
     elif feature[1] == 'ev':
         pml_feature_volume(pharmacophore, feature)
     return

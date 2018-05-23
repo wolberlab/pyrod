@@ -101,16 +101,13 @@ def exclusion_volume_parameters(config):
 
 
 def feature_parameters(config, feature_names=feature_names):
-    ionizable_feature_placement = config.get('feature parameters', 'ionizable feature placement')
-    if ionizable_feature_placement == 'hbonds':
-        feature_names = [x for x in feature_names if x not in ['pi', 'ni']]
-    features_per_feature_type = 20
+    features_per_feature_type = int(config.get('feature parameters', 'features per feature type'))
     mp = config.get('feature parameters', 'number of processes')
     if len(mp) > 0:
         mp = int(mp)
     else:
         mp = 1
-    return [feature_names, ionizable_feature_placement, features_per_feature_type, mp]
+    return [features_per_feature_type, mp]
 
 
 def pharmacophore_parameters(config):
@@ -130,13 +127,16 @@ def pharmacophore_parameters(config):
         hbs_number = int(config.get('pharmacophore parameters', 'hydrogen bonding features'))
         his_number = int(config.get('pharmacophore parameters', 'hydrophobic features'))
         iis_number = int(config.get('pharmacophore parameters', 'ionizable features'))
+        ais_number = int(config.get('pharmacophore parameters', 'aromatic features'))
     else:
         best_features = False
         best_name = None
         hbs_number = None
         his_number = None
         iis_number = None
-    return [pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number]
+        ais_number = None
+    return [pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number,
+            ais_number]
 
 
 def library_parameters(config, path):

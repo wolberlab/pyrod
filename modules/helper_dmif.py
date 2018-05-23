@@ -15,11 +15,11 @@ import numpy.lib.recfunctions as rfn
 try:
     from pyrod.modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
         grid_score_dict, grid_list_dict
-    from pyrod.modules.helper_math import angle, maximal_angle
+    from pyrod.modules.helper_math import angle, maximal_angle, norm, adjacent
 except ImportError:
     from modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
         grid_score_dict, grid_list_dict
-    from modules.helper_math import angle, maximal_angle
+    from modules.helper_math import angle, maximal_angle, norm, adjacent
 
 
 def grid_generator(center, edge_lengths, space):
@@ -230,6 +230,16 @@ def buriedness(center_position, positions):
                 score += 1
             positions = np.delete(positions, position_index, 0)
     return score
+
+
+def ai_partner_position(B, alpha, b, c_length):
+    """ This function returns the position of an interacting aromatic center. """
+    if alpha > 1.5707963267948966:
+        b = [-1 * x for x in b]
+        alpha -= 1.5707963267948966
+    b_length_old = norm(b)
+    b_length_new = adjacent(alpha, c_length)
+    return [X - ((x / b_length_old) * b_length_new) for X, x in zip(B, b)]
 
 
 def dmif_processing(results, traj_number, length):

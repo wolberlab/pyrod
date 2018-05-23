@@ -17,7 +17,7 @@ import time
 # pyrod modules
 try:
     from pyrod.modules.dmif import dmif
-    from pyrod.modules.lookup import logo, __version__, help_description
+    from pyrod.modules.lookup import logo, __version__, help_description, feature_names
     from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
     from pyrod.modules.helper_config import main_parameters, grid_parameters, dmif_parameters, \
         exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters
@@ -27,7 +27,7 @@ try:
     from pyrod.modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer
 except ImportError:
     from modules.dmif import dmif
-    from modules.lookup import logo, __version__, help_description
+    from modules.lookup import logo, __version__, help_description, feature_names
     from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
     from modules.helper_config import main_parameters, grid_parameters, dmif_parameters, exclusion_volume_parameters, \
         feature_parameters, pharmacophore_parameters, library_parameters
@@ -106,9 +106,8 @@ if __name__ == '__main__':
         if len(config.get('feature parameters', 'partners')) > 0:
             update_user('Loading partner from {}.'.format(config.get('feature parameters', 'partners')))
             partners = pickle.load(open(config.get('feature parameters', 'partners'), 'rb'))
-        feature_names, ionizable_feature_placement, features_per_feature_type, mp = feature_parameters(config)
-        args = [(dmif, partners, feature_name, ionizable_feature_placement, features_per_feature_type) for feature_name
-                in feature_names]
+        features_per_feature_type, mp = feature_parameters(config)
+        args = [(dmif, partners, feature_name, features_per_feature_type) for feature_name in feature_names]
         update_user('Generating features.')
         p = multiprocessing.Pool(processes=mp)
         results = p.starmap(features_generator, args, chunksize=1)
@@ -125,8 +124,8 @@ if __name__ == '__main__':
             update_user('Loading exclusion volumes from {}.'.format(config.get('pharmacophore parameters',
                                                                                'exclusion volumes')))
             evs = pickle.load(open(config.get('pharmacophore parameters', 'exclusion volumes'), 'rb'))
-        pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number = \
-            pharmacophore_parameters(config)
+        pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number, \
+            ais_number = pharmacophore_parameters(config)
         pharmacophore_directory = '/'.join([directory, 'pharmacophores'])
         for pharmacophore_format in pharmacophore_formats:
             if all_features:
@@ -134,7 +133,7 @@ if __name__ == '__main__':
                                                                                        pharmacophore_directory))
                 pharmacophore_writer(features + evs, pharmacophore_format, 'all', pharmacophore_directory, weight)
             if best_features:
-                selected_features = select_features(features, hbs_number, his_number, iis_number)
+                selected_features = select_features(features, hbs_number, his_number, iis_number, ais_number)
                 update_user('Writing {} pharmacophore with {} features to {}.'.format(pharmacophore_format,
                                                                                       len(selected_features),
                                                                                       pharmacophore_directory))

@@ -36,7 +36,6 @@ def center(positions, cutoff):
     if len(indices_maximal_neighbors) > 1:
         minimal_stddev = None
         index_minimal_stddev = None
-        counter = 0
         for index in indices_maximal_neighbors:
             stddev = standard_deviation(
                 [distance(x, positions[index]) for x in [positions[x] for x in indices_lists[index]]])
@@ -104,7 +103,7 @@ def maximal_sum_of_scores(feature_scores, indices, feature_indices):
 
 def generate_feature(feature_name, index, positions, partners, feature_scores, tolerance):
     feature_partners = []
-    if feature_name in ['ha', 'hd', 'ha2', 'hd2']:
+    if feature_name in ['ha', 'hd', 'ha2', 'hd2', 'ai']:
         partner, used_list = center(partners[feature_name + '_i'][index], 1.5)
         feature_partners.append(partner)
         if feature_name in ['ha2', 'hd2']:
@@ -130,12 +129,13 @@ def features_processing(results, features_per_feature_type):
     return features_processed
 
 
-def select_features(features, hbs_number, his_number, iis_number):
+def select_features(features, hbs_number, his_number, iis_number, ais_number):
     hbs = sorted([x for x in features if x[1] in ['hd', 'ha', 'hd2', 'ha2', 'hda']],
                  key=operator.itemgetter(6), reverse=True)[:hbs_number]
     his = [x for x in features if x[1] in ['hi']][:his_number]
     iis = sorted([x for x in features if x[1] in ['pi', 'ni']], key=operator.itemgetter(6), reverse=True)[:iis_number]
-    return hbs + his + iis
+    ais = [x for x in features if x[1] in ['ai']][:ais_number]
+    return hbs + his + iis + ais
 
 
 def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features, maximal_features, pyrod_pharmacophore):

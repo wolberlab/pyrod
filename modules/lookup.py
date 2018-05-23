@@ -7,13 +7,13 @@ This module contains dictionaries and tuples used by by different pyrod modules.
 import shutil
 
 
-__version__ = 0.5
+__version__ = '0.6.0'
 grid_score_dict = {'x': 0, 'y': 1, 'z': 2, 'shape': 3, 'ha': 4, 'hd': 5, 'ha2': 6, 'hd2': 7, 'hda': 8, 'ni': 9,
-                   'pi': 10, 'hi': 11, 'hi_hb': 12, 'tw': 13}
-grid_list_dict = {'ha_i': 0, 'hd_i': 1, 'ha2_i': 2, 'hd2_i': 3, 'hda_ia': 4, 'hda_id': 5}
+                   'pi': 10, 'hi': 11, 'hi_hb': 12, 'ai': 13, 'tw': 14}
+grid_list_dict = {'ha_i': 0, 'hd_i': 1, 'ha2_i': 2, 'hd2_i': 3, 'hda_ia': 4, 'hda_id': 5, 'ai_i': 6}
 hb_dist_dict = {'O': 3.2, 'N': 3.3, 'S': 3.9}
 hb_angl_dict = {'O': 130, 'N': 130, 'S': 130}
-sel_cutoff_dict = {'hb': 4, 'hi': 5, 'ii': 6, 'ai': 6, 'metal': 3}
+sel_cutoff_dict = {'hb': 4, 'hi': 5, 'ii': 6, 'ai': 7, 'metal': 3}
 hi_sel_dict = {'ALA': ['CB'], 'ARG': ['CB', 'CG'], 'ASN': ['CB'], 'ASP': ['CB'], 'GLN': ['CB', 'CG'],
                'GLU': ['CB', 'CG'], 'HIS': ['CB'], 'ILE': ['CB', 'CG1', 'CD1', 'CG2'],
                'LEU': ['CB', 'CG', 'CD1', 'CD2'], 'LYS': ['CB', 'CG', 'CD'], 'MET': ['CB', 'CG', 'SD', 'CE'],
@@ -43,7 +43,7 @@ hb_types = ('O', 'N', 'S')
 acceptors = ('O', 'OH', 'OG', 'OG1', 'OD1', 'OE1', 'OD2', 'OE2', 'ND1', 'SG', 'SD')
 protein_resnames = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'HSD', 'HSE', 'HSP', 'ILE', 'LEU',
                     'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL')
-feature_names = ('ha', 'ha2', 'hd', 'hd2', 'hda', 'hi', 'pi', 'ni')
+feature_names = ('ha', 'ha2', 'hd', 'hd2', 'hda', 'hi', 'pi', 'ni', 'ai')
 terminal_width = shutil.get_terminal_size()[0]
 logo = ('',
         '{:^{width}}'.format('                 |X|                   ', width=terminal_width),
@@ -59,4 +59,4 @@ logo = ('',
         '{:^{width}}'.format(' Tracing water molecules in molecular  ', width=terminal_width),
         '{:^{width}}'.format('        dynamics simulations.          ', width=terminal_width),
         '')
-help_description = 'PyRod v. {} - Tracing water molecules in molecular dynamics simulations.'.format(__version__)
+help_description = 'PyRod v{} - Tracing water molecules in molecular dynamics simulations.'.format(__version__)

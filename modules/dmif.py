@@ -18,14 +18,16 @@ try:
     from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
         sel_cutoff_dict
     from pyrod.modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
-        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, grid_parameters, grid_partners_to_array
+        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, ai_partner_position, grid_parameters, \
+        grid_partners_to_array
     from pyrod.modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
     from pyrod.modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
         sel_cutoff_dict
     from modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
-        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, grid_parameters, grid_partners_to_array
+        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, ai_partner_position, \
+        grid_parameters, grid_partners_to_array
     from modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
     from modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
 
@@ -52,9 +54,8 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
     hi_atoms = select_hi_atoms(protein)
     pi_atoms = select_pi_atoms(protein)
     ni_atoms = select_ni_atoms(protein)
-    #ai_atoms = select_ai_atoms(protein)
+    ai_atoms = select_ai_atoms(protein)
     metal_atoms = select_metal_atoms(topology, metal_names)
-    # ai missing
     start = time.time()
     for frame, _ in enumerate(u.trajectory[first_frame:last_frame:]):
         # create index collectors
@@ -64,7 +65,6 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
         hd_inds = []
         hd2_inds = []
         hda_inds = []
-        #ai_inds = []
         tw_inds = []
         positions = u.atoms.positions
         h2os_os_box_inds = topology[((topology['resname'] == water_name) & (topology['name'] == 'O') &
@@ -99,24 +99,24 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                 ni_lists = tree_h2os.query_ball_tree(cKDTree(ni_positions), sel_cutoff_dict['ii'])
             else:
                 ni_lists = [[]] * len(h2os_os_box_inds)
-            #if len(ai_atoms) > 0:
-            #    ai_positions = [((x + y + z) / 3) for x, y, z in zip(positions[ai_atoms['atomid'][::3]],
-            #                                                         positions[ai_atoms['atomid'][1::3]],
-            #                                                         positions[ai_atoms['atomid'][2::3]])]
-            #    ai_normals = [normal(a, b, c) for a, b, c in zip(positions[ai_atoms['atomid'][::3]], ai_positions,
-            #                                                    positions[ai_atoms['atomid'][2::3]])]
-            #    ai_lists = tree_h2os.query_ball_tree(cKDTree(ai_positions), sel_cutoff_dict['ai'])
-            #else:
-            #    ai_lists = [[]] * len(h2os_os_box_inds)
+            if len(ai_atoms) > 0:
+                ai_positions = [((x + y + z) / 3) for x, y, z in zip(positions[ai_atoms['atomid'][::3]],
+                                                                     positions[ai_atoms['atomid'][1::3]],
+                                                                     positions[ai_atoms['atomid'][2::3]])]
+                ai_normals = [normal(a, b, c) for a, b, c in zip(positions[ai_atoms['atomid'][::3]], ai_positions,
+                                                                 positions[ai_atoms['atomid'][2::3]])]
+                ai_lists = tree_h2os.query_ball_tree(cKDTree(ai_positions), sel_cutoff_dict['ai'])
+            else:
+                ai_lists = [[]] * len(h2os_os_box_inds)
             if len(metal_atoms) > 0:
                 metal_positions = positions[metal_atoms['atomid']]
                 metal_lists = tree_h2os.query_ball_tree(cKDTree(metal_positions), sel_cutoff_dict['metal'])
             else:
                 metal_lists = [[]] * len(h2os_os_box_inds)
         else:
-            h2os_os_box_inds, hb_lists, hi_lists, pi_lists, ni_lists, metal_lists = [], [], [], [], [], []
-        for o_ind, hb_list, hi_list, pi_list, ni_list, metal_list in \
-                zip(h2os_os_box_inds, hb_lists, hi_lists, pi_lists, ni_lists, metal_lists):
+            h2os_os_box_inds, hb_lists, hi_lists, pi_lists, ni_lists, ai_lists, metal_lists = [], [], [], [], [], [], []
+        for o_ind, hb_list, hi_list, pi_list, ni_list, ai_list, metal_list in \
+                zip(h2os_os_box_inds, hb_lists, hi_lists, pi_lists, ni_lists, ai_lists, metal_lists):
             ha, ha_i, hd, hd_i, hi, pi, ni, ai, ai_i, ai_n = 0, [], 0, [], 0, 0, 0, 0, [], []
             o_coor, h1_coor, h2_coor = positions[o_ind], positions[o_ind + 1], positions[o_ind + 2]
             # hydrogen bonds
@@ -162,79 +162,78 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                 tw_inds += inds
             # water molecule is replaceable/displaceable
             else:
-                # negative ionizable
+                # shape
+                shape_inds += inds
+                # hydrogen bond features
+                if hd == 0:
+                    # single
+                    if ha == 1:
+                        ha_inds += inds
+                        for ind in inds:
+                            grid_partners[ind][grid_list_dict['ha_i']] += ha_i
+                    # double
+                    elif ha == 2:
+                        ha2_inds += inds
+                        for ind in inds:
+                            grid_partners[ind][grid_list_dict['ha2_i']] += ha_i
+                # single hydrogen bond donors
+                elif hd == 1:
+                    # single donor
+                    if ha == 0:
+                        hd_inds += inds
+                        for ind in inds:
+                            grid_partners[ind][grid_list_dict['hd_i']] += hd_i
+                    # mixed donor acceptor
+                    elif ha == 1:
+                        hda_inds += inds
+                        for ind in inds:
+                            grid_partners[ind][grid_list_dict['hda_id']] += hd_i
+                            grid_partners[ind][grid_list_dict['hda_ia']] += ha_i
+                else:
+                    # double hydrogen bond donor
+                    hd2_inds += inds
+                    for ind in inds:
+                        grid_partners[ind][grid_list_dict['hd2_i']] += hd_i
+                # ionizable interactions
+                # sum up negative ionizable
                 for ni_ind in ni_list:
                     ni += 2.6 / distance(o_coor, ni_positions[ni_ind])
-                # positive ionizable
+                # sum up positive ionizable
                 for pi_ind in pi_list:
                     pi += 2.6 / distance(o_coor, pi_positions[pi_ind])
+                # add ionizable interaction score
+                if pi > 0:
+                    grid_score['pi'][inds] += pi
+                    grid_score['ni'][inds] -= pi
+                if ni > 0:
+                    grid_score['ni'][inds] += ni
+                    grid_score['pi'][inds] -= ni
                 # hydrophobic interactions
                 if len(hi_list) > 0:
                     hi += 1
                     if len(hi_list) > 1:
                         hi += buriedness(o_coor, hi_positions[hi_list])
+                    # 2.6 / 4 = 0.65 --> definitely not involved in a charged hydrogen bond
+                    if ni < 0.65 > pi:
+                        grid_score['hi'][inds] += hi
+                    if ha + hd > 0:
+                        grid_score['hi_hb'][inds] += hi
                 # aromatic interactions
-                #for ai_ind in ai_inds:
-                #    ai_i = ai_positions[ai_ind]
-                #    ai_n = ai_normals[ai_ind]
-                #    for ind in inds:
-                #        grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
-                #        if distance(grid_point, ai_i) <= 5.5:
-                #            c = [ai_i[0] - grid_point[0], ai_i[1] - grid_point[1],
-                #                                        ai_i[2] - grid_point[2]]
-                #            alpha = vector_angle(ai_n, c)
-                #            if opposite(alpha, norm(c)) <= 2:
-                #                asdaf
-                # get grid points close to water molecule
-                shape_inds += inds
-                # check if water molecule is involved in any interactions
-                if ha + hd + hi + pi + ni > 0:
-                    # adding score to grid
-                    if hd == 0:
-                        # single
-                        if ha == 1:
-                            ha_inds += inds
-                            for ind in inds:
-                                grid_partners[ind][grid_list_dict['ha_i']] += ha_i
-                        # double
-                        elif ha == 2:
-                            ha2_inds += inds
-                            for ind in inds:
-                                grid_partners[ind][grid_list_dict['ha2_i']] += ha_i
-                    # single hydrogen bond donors
-                    elif hd == 1:
-                        # single donor
-                        if ha == 0:
-                            hd_inds += inds
-                            for ind in inds:
-                                grid_partners[ind][grid_list_dict['hd_i']] += hd_i
-                        # mixed donor acceptor
-                        elif ha == 1:
-                            hda_inds += inds
-                            for ind in inds:
-                                grid_partners[ind][grid_list_dict['hda_id']] += hd_i
-                                grid_partners[ind][grid_list_dict['hda_ia']] += ha_i
-                    else:
-                        # double hydrogen bond donor
-                        hd2_inds += inds
-                        for ind in inds:
-                            grid_partners[ind][grid_list_dict['hd2_i']] += hd_i
-                    # ionizable interactions
-                    if pi > 0:
-                        grid_score['pi'][inds] += pi
-                        grid_score['ni'][inds] -= pi
-                    # positive ionizable, pi cation interaction missing
-                    if ni > 0:
-                        grid_score['ni'][inds] += ni
-                        grid_score['pi'][inds] -= ni
-                    # hydrophobic interaction
-                    if hi > 0:
-                        # 2.6 / 4 = 0.65 --> definitely not involved in a charged hydrogen bond
-                        if ni < 0.65 > pi:
-                            grid_score['hi'][inds] += hi
-                        if ha + hd > 0:
-                            grid_score['hi_hb'][inds] += hi
-                    # aromatic interaction missing
+                for ai_ind in ai_list:
+                    ai_i = ai_positions[ai_ind]
+                    ai_n = ai_normals[ai_ind]
+                    for ind in inds:
+                        grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
+                        # check distance between grid point and aromatic center
+                        if 3 <= distance(grid_point, ai_i) <= 5.5:
+                            c = [grid_point[0] - ai_i[0], grid_point[1] - ai_i[1], grid_point[2] - ai_i[2]]
+                            alpha = vector_angle(ai_n, c)
+                            c_length = norm(c)
+                            # check offset between grid point and aromatic center
+                            if opposite(alpha, c_length) <= 1.5:
+                                grid_score['ai'][ind] += 1
+                                grid_partners[ind][grid_list_dict['ai_i']] += [ai_partner_position(grid_point, alpha,
+                                                                                                   ai_n, c_length)]
         # adding scores to grid
         grid_score['shape'][shape_inds] += 1
         grid_score['ha'][ha_inds] += 1

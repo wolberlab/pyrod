@@ -55,16 +55,11 @@ def exclusion_volume_generator(dmif, shape_minimum_cutoff=1, shape_maximum_cutof
     return exclusion_volumes
 
 
-def features_generator(dmif, partners, feature_name, ionizable_feature_placement, features_per_feature_type):
+def features_generator(dmif, partners, feature_name, features_per_feature_type):
     """ This function generates features with variable tolerance based on a global maximum search algorithm. """
-    text = feature_name
-    if ionizable_feature_placement == 'hbonds':
-        if feature_name in ['hd', 'hd2']:
-            text = '{} and pi'.format(feature_name)
-        elif feature_name in ['ha', 'ha2']:
-            text = '{} and ni'.format(feature_name)
-    update_user('Starting {} feature generation.'.format(text))
-    local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0.0, 'pi': 0.0, 'ni': 0.0}
+    update_user('Starting {} feature generation.'.format(feature_name))
+    local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0, 'pi': 0, 'ni': 0,
+                           'ai': 1.5}
     local_maximum_radius = local_maximum_radii[feature_name]
     score_minimum = 1
     positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
@@ -109,26 +104,12 @@ def features_generator(dmif, partners, feature_name, ionizable_feature_placement
         else:
             generated_features.append(generate_feature(feature_name, index, positions, partners, feature_scores,
                                                        tolerance))
-            if ionizable_feature_placement == 'hbonds':
-                if feature_name in ['hd', 'hd2']:
-                    if dmif['pi'][index] >= score_minimum:
-                        generated_features.append(generate_feature('pi', index, positions, partners, dmif['pi'],
-                                                                   tolerance))
-                elif feature_name in ['ha', 'ha2']:
-                    if dmif['pi'][index] >= score_minimum:
-                        generated_features.append(generate_feature('ni', index, positions, partners, dmif['ni'],
-                                                                   tolerance))
             not_used = [x for x in not_used if x not in feature_indices]
             used += feature_indices
         if len([x for x in generated_features if x[0] == feature_name]) >= features_per_feature_type:
             break
     update_user('Generated {} {} features.'.format(len([x for x in generated_features if x[0] == feature_name]),
                                                    feature_name))
-    if ionizable_feature_placement == 'hbonds':
-        if feature_name in ['hd', 'hd2']:
-            update_user('Generated {} {} features.'.format(len([x for x in generated_features if x[0] == 'pi']), 'pi'))
-        elif feature_name in ['ha', 'ha2']:
-            update_user('Generated {} {} features.'.format(len([x for x in generated_features if x[0] == 'ni']), 'ni'))
     return generated_features
 
 

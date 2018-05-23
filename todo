@@ -1,8 +1,7 @@
 get parameters for dist_dict, angl_dict from csd?
 
-improve exclusion volume placement
-  - create empty list with filtered exclusion volumes
-  - with distance in 2 A steps starting at 2
-    - find exclusion volumes within distance via tree query
+pi-cation?
+
+center function in helper_pharmacophore is slow and very memory expensive
 
 logging
