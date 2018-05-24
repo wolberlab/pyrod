@@ -40,8 +40,11 @@ atoms.wrap(compound='residues', center='com')
 
 
 import pickle
-dmif = pickle.load(open('/mdspace/pyrod/examples/1ke7/pyrod/data/dmif.p', 'rb'), encoding='latin1')
-partners = pickle.load(open('/mdspace/pyrod/examples/1ke7/pyrod/data/partners.p', 'rb'), encoding='latin1')
+dmif = pickle.load(open('/mdspace/pyrod/examples/1ke7_restrained3/pyrod/data/dmif.p', 'rb'))
+partners = pickle.load(open('/mdspace/pyrod/examples/1ke7_restrained3/pyrod/data/partners.p', 'rb'))
+from pyrod.modules.pharmacophore import *
+features = features_generator(dmif, partners, 'hd', 20)
+
 features = pickle.load(open('/mdspace/pyrod/examples/test/pyrod/data/features.p', 'rb'))
 
 

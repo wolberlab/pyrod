@@ -1,4 +1,5 @@
 *
+ - improved center function for feature generation (faster, less memory)
  - renamed changes to CHANGELOG
  - small changes
 * v0.6.0

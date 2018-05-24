@@ -9,25 +9,38 @@ from itertools import combinations, product
 import operator
 
 # external libraries
+import numpy as np
 from scipy.spatial import cKDTree
 
 # pyrod modules
 try:
+    from pyrod.modules.helper_dmif import grid_parameters, grid_generator
     from pyrod.modules.helper_math import distance, standard_deviation
     from pyrod.modules.lookup import feature_names
     from pyrod.modules.helper_update import update_user
 except ImportError:
+    from modules.helper_dmif import grid_parameters, grid_generator
     from modules.helper_math import distance, standard_deviation
     from modules.lookup import feature_names
     from modules.helper_update import update_user
 
 
 def center(positions, cutoff):
-    """ This function returns the position with the most neighbors within the specified cutoff. If multiple
+    """ This function returns the approximate position with the most neighbors within the specified cutoff. If multiple
     positions have the most neighbors, the position with the lowest standard deviation of the distances to its
     neighbors is returned. """
+    positions = np.array(positions)
+    x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_parameters(positions)[:-1]
+    x_center, y_center, z_center = [round((x_minimum + x_maximum) / 2, 1), round((y_minimum + y_maximum) / 2, 1),
+                                    round((z_minimum + z_maximum) / 2, 1)]
+    x_length, y_length, z_length = [round(x_maximum - x_minimum, 1), round(y_maximum - y_minimum, 1),
+                                    round(z_maximum - z_minimum, 1)]
+    grid = grid_generator([x_center, y_center, z_center], [x_length, y_length, z_length], 0.1)
     tree = cKDTree(positions)
-    indices_lists = tree.query_ball_tree(tree, cutoff)
+    length_positions = len(positions)
+    less_positions = [positions[x] for x in set(tree.query(grid, distance_upper_bound=0.1)[1]) if x != length_positions]
+    small_tree = cKDTree(less_positions)
+    indices_lists = small_tree.query_ball_tree(tree, cutoff)
     indices_maximal_neighbors = []
     maximal_neighbours = max([len(x) for x in indices_lists])
     for index, x in enumerate(indices_lists):
@@ -38,16 +51,16 @@ def center(positions, cutoff):
         index_minimal_stddev = None
         for index in indices_maximal_neighbors:
             stddev = standard_deviation(
-                [distance(x, positions[index]) for x in [positions[x] for x in indices_lists[index]]])
+                [distance(x, less_positions[index]) for x in [positions[x] for x in indices_lists[index]]])
             if minimal_stddev is None:
                 minimal_stddev = stddev
                 index_minimal_stddev = index
             elif stddev < minimal_stddev:
                 minimal_stddev = stddev
                 index_minimal_stddev = index
-        return [positions[index_minimal_stddev], indices_lists[index_minimal_stddev]]
+        return [less_positions[index_minimal_stddev], indices_lists[index_minimal_stddev]]
     else:
-        return [positions[indices_maximal_neighbors[0]], indices_lists[indices_maximal_neighbors[0]]]
+        return [less_positions[indices_maximal_neighbors[0]], indices_lists[indices_maximal_neighbors[0]]]
 
 
 def feature_tolerance(position, tree, scores, maximal_score):
