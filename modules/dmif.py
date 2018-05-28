@@ -238,7 +238,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                             c_length = norm(c)
                             # check offset between grid point and aromatic center
                             if opposite(alpha, c_length) <= 1.5:
-                                grid_score['ai'][ind] += ai_score_dict[ai_distance, 1]
+                                grid_score['ai'][ind] += ai_score_dict[ai_distance]
                                 grid_partners[ind][grid_list_dict['ai_i']] += [ai_partner_position(grid_point, alpha,
                                                                                                    ai_n, c_length)]
         # adding scores to grid
