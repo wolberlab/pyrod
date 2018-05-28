@@ -16,7 +16,7 @@ from scipy.spatial import cKDTree
 # pyrod modules
 try:
     from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
-        sel_cutoff_dict
+        sel_cutoff_dict, ai_score_dict
     from pyrod.modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
         select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, ai_partner_position, grid_parameters, \
         grid_partners_to_array
@@ -25,7 +25,7 @@ try:
     from pyrod.modules.helper_write import setup_logger
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
-        sel_cutoff_dict
+        sel_cutoff_dict, ai_score_dict
     from modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
         select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, ai_partner_position, \
         grid_parameters, grid_partners_to_array
@@ -230,14 +230,15 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     ai_n = ai_normals[ai_ind]
                     for ind in inds:
                         grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
+                        ai_distance = round(distance(grid_point, ai_i), 1)
                         # check distance between grid point and aromatic center
-                        if 3 <= distance(grid_point, ai_i) <= 5.5:
+                        if 2.6 <= ai_distance <= 4.4:
                             c = [grid_point[0] - ai_i[0], grid_point[1] - ai_i[1], grid_point[2] - ai_i[2]]
                             alpha = vector_angle(ai_n, c)
                             c_length = norm(c)
                             # check offset between grid point and aromatic center
                             if opposite(alpha, c_length) <= 1.5:
-                                grid_score['ai'][ind] += 1
+                                grid_score['ai'][ind] += ai_score_dict[ai_distance, 1]
                                 grid_partners[ind][grid_list_dict['ai_i']] += [ai_partner_position(grid_point, alpha,
                                                                                                    ai_n, c_length)]
         # adding scores to grid

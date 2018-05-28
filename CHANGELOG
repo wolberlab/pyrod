@@ -1,4 +1,5 @@
-*
+* v0.6.2
+ - added strict distance dependency for ai
  - added logging, debugging mode via command line option --verbose
 * v0.6.1
  - improved center function for feature generation (faster, less memory)

@@ -44,6 +44,8 @@ acceptors = ('O', 'OH', 'OG', 'OG1', 'OD1', 'OE1', 'OD2', 'OE2', 'ND1', 'SG', 'S
 protein_resnames = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'HSD', 'HSE', 'HSP', 'ILE', 'LEU',
                     'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL')
 feature_names = ('ha', 'hd', 'ai', 'ha2', 'hd2', 'hda', 'hi', 'pi', 'ni')
+ai_score_dict = {2.6: 0.1, 2.7: 0.1, 2.8: 0.2, 2.9: 0.3, 3.0: 0.5, 3.1: 0.6, 3.2: 0.8, 3.3: 0.9, 3.4: 1.0, 3.5: 1.0,
+                 3.6: 1.0, 3.7: 0.9, 3.8: 0.8, 3.9: 0.6, 4.0: 0.5, 4.1: 0.3, 4.2: 0.2, 4.3: 0.1, 4.4: 0.1}
 terminal_width = shutil.get_terminal_size()[0]
 logo = ('',
         '{:^{width}}'.format('                 |X|                   ', width=terminal_width),
