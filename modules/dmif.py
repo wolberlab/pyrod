@@ -22,6 +22,7 @@ try:
         grid_partners_to_array
     from pyrod.modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
     from pyrod.modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
+    from pyrod.modules.helper_write import setup_logger
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
         sel_cutoff_dict
@@ -30,16 +31,21 @@ except ImportError:
         grid_parameters, grid_partners_to_array
     from modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
     from modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
+    from modules.helper_write import setup_logger
 
 
 def dmif(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score,
-         grid_partners, first_frame, last_frame, water_name, metal_names):
-    logger = logging.getLogger('_'.join(['trajectroy', str(counter + 1)]))
+         grid_partners, first_frame, last_frame, water_name, metal_names, directory, debugging):
+    logger = setup_logger('_'.join(['trajectory', str(counter + 1)]), directory, debugging)
+    logger.info('Started analysis of trajectory {}.'.format(counter + 1))
     check_progress, final, past_frames, future_frames = update_progress_dmif_parameters(
         counter, length_trajectory, number_processes, number_trajectories)
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
+    if debugging:
         u = mda.Universe(topology, trajectory)
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            u = mda.Universe(topology, trajectory)
     topology = np.array([(a, b, c, d, e) for a, b, c, d, e in
                          zip(range(len(u.atoms.resnames)), u.atoms.resnames, u.atoms.resids, u.atoms.names,
                              u.atoms.types)],
@@ -245,6 +251,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
         if check_progress:
             update_progress_dmif(counter, frame, length_trajectory, number_trajectories, number_processes, past_frames,
                                  future_frames, start, final)
-        logger.info('Trajectory {} finished with frame {}.'.format(counter + 1, frame + 1))
+        logger.debug('Trajectory {} finished with frame {}.'.format(counter + 1, frame + 1))
+    logger.info('Finished analysis of trajectory {}.'.format(counter + 1))
     grid_partners = grid_partners_to_array(grid_partners)
     return [grid_score, grid_partners]

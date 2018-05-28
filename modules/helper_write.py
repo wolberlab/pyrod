@@ -6,6 +6,7 @@ This module contains helper functions to write out data.
 
 # python standard libraries
 import copy
+import logging
 import os
 import pickle
 import xml.etree.ElementTree as et
@@ -32,6 +33,7 @@ def file_path(name, path):
         os.makedirs(path)
     if os.path.exists('/'.join([path, name])):
         os.remove('/'.join([path, name]))
+    return
 
 
 def pdb_text(positions, resname, scores, indices=None):
@@ -99,13 +101,13 @@ def pdb_writer(positions, name, path, resname='GRI', scores=None):
     """ This function writes out data as atoms to a pdb file. If scores are provided, each score is saved as b-factor
     in the respective atom. """
     if len(positions) > 99999:
-        update_user('Decrease number of data points. Only 99999 data points (atoms) can be written to a pdb. You '
-                    'attempted to write {} data points.'.format(len(positions)))
+        print('Decrease number of data points. Only 99999 data points (atoms) can be written to a pdb. You '
+              'attempted to write {} data points.'.format(len(positions)))
         return
     if scores is None:
         scores = [0] * len(positions)
     if len(positions) != len(scores):
-        update_user('Numbers of positions and scores must be equal. You provided {} positions and {} scores').format(
+        print('Numbers of positions and scores must be equal. You provided {} positions and {} scores').format(
             len(positions), len(scores))
         return
     name = '.'.join([name, 'pdb'])
@@ -120,8 +122,8 @@ def dmif_writer(dmif, feature, file_format, name, directory):
     """ This function writes out dmifs as density maps. """
     valid_formats = ['xplor', 'cns', 'kont']
     if file_format not in valid_formats:
-        update_user('Invalid dmif format, only {} and {} are supported.'.format(', '.join(valid_formats[:-1]),
-                                                                                valid_formats[-1]))
+        print('Invalid dmif format, only {} and {} are supported.'.format(', '.join(valid_formats[:-1]),
+                                                                          valid_formats[-1]))
         return
     positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
     scores = dmif[feature]
@@ -326,8 +328,7 @@ def pharmacophore_writer(features, file_format, name, path, weight):
     """ This function writes out pharmacophores. """
     valid_formats = ['pml', 'pdb']
     if file_format not in valid_formats:
-        update_user('Invalid pharmacophore format, only {} and {} are supported.'.format(valid_formats[0],
-                                                                                         valid_formats[1]))
+        print('Invalid pharmacophore format, only {} and {} are supported.'.format(valid_formats[0], valid_formats[1]))
         return
     name = '.'.join([name, file_format])
     file_path(name, path)
@@ -341,9 +342,23 @@ def pharmacophore_writer(features, file_format, name, path, weight):
     return
 
 
-def pickle_writer(data, name, directory):
+def pickle_writer(data, name, directory, logger):
     name = '.'.join([name, 'p'])
-    update_user('Writing {} to {}.'.format(name, directory))
+    update_user('Writing {} to {}.'.format(name, directory), logger)
     file_path(name, directory)
     pickle.dump(data, (open('/'.join([directory, name]), 'wb')))
     return
+
+
+def setup_logger(name, directory, debugging):
+    directory = '/'.join([directory, 'logs'])
+    file_path('.'.join([name, 'log']), directory)
+    handler = logging.FileHandler('/'.join([directory, '.'.join([name, 'log'])]))
+    handler.setFormatter(logging.Formatter(fmt='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
+    logger = logging.getLogger(name)
+    if debugging:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    return logger

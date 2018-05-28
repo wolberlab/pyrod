@@ -20,17 +20,18 @@ try:
     from pyrod.modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
     from pyrod.modules.helper_update import update_progress, update_user, bytes_to_text
-    from pyrod.modules.helper_write import file_path, pml_feature_volume
+    from pyrod.modules.helper_write import file_path, pml_feature_volume, setup_logger
 except ImportError:
     from modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
     from modules.helper_update import update_progress, update_user, bytes_to_text
-    from modules.helper_write import file_path, pml_feature_volume
+    from modules.helper_write import file_path, pml_feature_volume, setup_logger
 
 
-def exclusion_volume_generator(dmif, shape_minimum_cutoff=1, shape_maximum_cutoff=10, shape_radius=3,
-                               exclusion_volume_radius=1, exclusion_volume_space=2):
-    update_user('Generating exclusion volumes.')
+def exclusion_volume_generator(dmif, directory, debugging, shape_minimum_cutoff=1, shape_maximum_cutoff=10,
+                               shape_radius=3, exclusion_volume_radius=1, exclusion_volume_space=2):
+    logger = setup_logger('exclusion_volumes', directory, debugging)
+    update_user('Generating exclusion volumes.', logger)
     positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
     tree = cKDTree(positions)
     shape_score_list = dmif['shape']
@@ -51,13 +52,15 @@ def exclusion_volume_generator(dmif, shape_minimum_cutoff=1, shape_maximum_cutof
         if ((index + 1) % 1000 == 0) or ((index + 1) % length == 0):
             eta = ((time.time() - start) / (index + 1)) * (length - (index + 1))
             update_progress(float(index + 1) / length, 'Progress of exclusion volume generation', eta)
-    update_user('Finished with generation of {} exclusion volumes.'.format(len(exclusion_volumes)))
+        logger.debug('Passed grid index {}.'.format(index))
+    update_user('Finished with generation of {} exclusion volumes.'.format(len(exclusion_volumes)), logger)
     return exclusion_volumes
 
 
-def features_generator(dmif, partners, feature_name, features_per_feature_type):
+def features_generator(dmif, partners, feature_name, features_per_feature_type, directory, debugging):
     """ This function generates features with variable tolerance based on a global maximum search algorithm. """
-    update_user('Starting {} feature generation.'.format(feature_name))
+    logger = setup_logger('_'.join(['features', feature_name]), directory, debugging)
+    update_user('Starting {} feature generation.'.format(feature_name), logger)
     local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0, 'pi': 0, 'ni': 0,
                            'ai': 1.5}
     local_maximum_radius = local_maximum_radii[feature_name]
@@ -70,6 +73,7 @@ def features_generator(dmif, partners, feature_name, features_per_feature_type):
     used = []
     while feature_scores[not_used].max() >= score_minimum:
         feature_maximum = feature_scores[not_used].max()
+        logger.debug('Feature {} maximum of remaining grid points at {}.'.format(feature_name, feature_maximum))
         indices_not_checked = np.where(abs(feature_scores - feature_maximum) < 1e-8)[0]
         indices = []
         # check if position corresponds to local maximum
@@ -109,7 +113,7 @@ def features_generator(dmif, partners, feature_name, features_per_feature_type):
         if len([x for x in generated_features if x[0] == feature_name]) >= features_per_feature_type:
             break
     update_user('Generated {} {} features.'.format(len([x for x in generated_features if x[0] == feature_name]),
-                                                   feature_name))
+                                                   feature_name), logger)
     return generated_features
 
 
@@ -139,7 +143,7 @@ def library_generator(pharmacophore_path, minimal_features, maximal_features, ma
                     elif user_prompt == 'yes':
                         super_pharmacophore = tree.findall('pharmacophore')[0]
         else:
-            update_user('Cannot find any pharmacophore in the pml file.')
+            print('Cannot find any pharmacophore in the pml file.')
             sys.exit()
     # analyzing pharmacophore
     for index, feature in enumerate(super_pharmacophore):

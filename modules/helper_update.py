@@ -7,7 +7,6 @@ This module contains helper functions used for user feedback and writing to the 
 # python standard libraries
 import sys
 import time
-import logging
 
 
 def time_to_text(seconds):
@@ -103,8 +102,8 @@ def update_progress_dmif(counter, frame, length_trajectory, number_trajectories,
     return
 
 
-def update_user(text):
+def update_user(text, logger):
     """ This function writes information to the terminal and to a log file. """
     print(text)
-    logging.info(text)
+    logger.info(text)
     return

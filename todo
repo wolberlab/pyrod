@@ -2,6 +2,8 @@ get parameters for dist_dict, angl_dict from csd?
 
 pi-cation?
 
-center function in helper_pharmacophore is slow and very memory expensive
+adding distance dependency for ai?
 
-logging
+proper docstrings
+
+proper tests
