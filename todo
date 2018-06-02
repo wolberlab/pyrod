@@ -5,3 +5,5 @@ pi-cation?
 proper docstrings
 
 proper tests
+
+float for min, h, etc. but not s
