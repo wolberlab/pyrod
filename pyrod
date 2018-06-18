@@ -7,7 +7,6 @@ dMIFs and pharmacophores.
 # python standard libraries
 import argparse
 import configparser
-import logging
 import multiprocessing
 import os
 import pickle

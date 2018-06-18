@@ -17,32 +17,32 @@ def time_to_text(seconds):
                     if seconds > 31449600:
                         time_as_text = 'years'
                     else:
-                        time_as_text = '{} weeks'.format(int(seconds / 1209600))
+                        time_as_text = '{} weeks'.format(round(seconds / 1209600, 1))
                 else:
-                    time_as_text = '{} d'.format(int(seconds / 86400))
+                    time_as_text = '{} d'.format(round(seconds / 86400, 1))
             else:
-                time_as_text = '{} h'.format(int(seconds / 3600))
+                time_as_text = '{} h'.format(round(seconds / 3600, 1))
         else:
-            time_as_text = '{} min'.format(int(seconds / 60))
+            time_as_text = '{} min'.format(round(seconds / 60, 1))
     else:
         time_as_text = '{} s'.format(int(seconds))
     return time_as_text
 
 
-def bytes_to_text(bytes):
-    if bytes > 1000:
-        if bytes > 1000000:
-            if bytes > 1000000000:
-                if bytes > 1000000000000:
-                    bytes_as_text = '{} TB'.format(round(bytes / 1000000000000, 2))
+def bytes_to_text(bytes_number):
+    if bytes_number > 1000:
+        if bytes_number > 1000000:
+            if bytes_number > 1000000000:
+                if bytes_number > 1000000000000:
+                    bytes_as_text = '{} TB'.format(round(bytes_number / 1000000000000, 2))
                 else:
-                    bytes_as_text = '{} GB'.format(round(bytes / 1000000000, 2))
+                    bytes_as_text = '{} GB'.format(round(bytes_number / 1000000000, 2))
             else:
-                bytes_as_text = '{} MB'.format(round(bytes / 1000000, 2))
+                bytes_as_text = '{} MB'.format(round(bytes_number / 1000000, 2))
         else:
-            bytes_as_text = '{} KB'.format(round(bytes / 1000, 2))
+            bytes_as_text = '{} KB'.format(round(bytes_number / 1000, 2))
     else:
-        bytes_as_text = '{} B'.format(bytes)
+        bytes_as_text = '{} B'.format(bytes_number)
     return bytes_as_text
 
 

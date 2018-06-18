@@ -1,3 +1,6 @@
+* v0.6.3
+ - added t-stacking
+ - minor changes
 * v0.6.2
  - added strict distance dependency for ai
  - added logging, debugging mode via command line option --verbose

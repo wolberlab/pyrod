@@ -1,9 +1,8 @@
 get parameters for dist_dict, angl_dict from csd?
 
 pi-cation?
+ - hard to compare with salt bridges, might be stronger, depends on environment
 
-proper docstrings
+proper docstrings and tests
 
-proper tests
-
-float for min, h, etc. but not s
+split cfg files into multiple files

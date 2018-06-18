@@ -1,3 +1,4 @@
 *.pyc
 *~
 modules/__pycache__
+*trial*

@@ -15,11 +15,11 @@ import numpy.lib.recfunctions as rfn
 try:
     from pyrod.modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
         grid_score_dict, grid_list_dict
-    from pyrod.modules.helper_math import angle, maximal_angle, norm, adjacent
+    from pyrod.modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
 except ImportError:
     from modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
         grid_score_dict, grid_list_dict
-    from modules.helper_math import angle, maximal_angle, norm, adjacent
+    from modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
 
 
 def grid_generator(center, edge_lengths, space):
@@ -81,34 +81,35 @@ def select_protein(topology):
     return selection
 
 
-def select_hb_atoms(protein):
+def select_hb_atoms(protein_atoms):
     """ This function returns all atoms with hydrogen bond capacity from a protein. """
     selection = ''
     for hb_type in hb_types:
         for resname in protein_resnames:
             if len(selection) == 0:
-                selection = protein[(protein['resname'] == resname) & (protein['type'] == hb_type)]
+                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['type'] == hb_type)]
             else:
-                selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                               (protein['type'] == hb_type)]), axis=0)
+                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                     (protein_atoms['type'] == hb_type)]), axis=0)
     if len(selection) > 1:
         selection.sort(order='atomid')
     return selection
 
 
-def select_hi_atoms(protein):
+def select_hi_atoms(protein_atoms):
     """ This function returns all hydrophobic atoms from a protein. """
     selection = ''
     for resname in hi_sel_dict.keys():
         for name in hi_sel_dict[resname]:
             if len(selection) == 0:
-                selection = protein[(protein['resname'] == resname) & (protein['name'] == name)]
+                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
             else:
-                selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                               (protein['name'] == name)]), axis=0)
-    cys_sel = protein[(protein['resname'] == 'CYS') & ((protein['name'] == 'CB') | (protein['name'] == 'SG'))]
+                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                     (protein_atoms['name'] == name)]), axis=0)
+    cys_sel = protein_atoms[(protein_atoms['resname'] == 'CYS') & ((protein_atoms['name'] == 'CB') |
+                                                                   (protein_atoms['name'] == 'SG'))]
     for cys_atom in cys_sel:
-        if len(protein[((protein['resid'] == cys_atom['resid']) & (protein['name'] == 'HG'))]) == 0:
+        if len(protein_atoms[((protein_atoms['resid'] == cys_atom['resid']) & (protein_atoms['name'] == 'HG'))]) == 0:
             if len(selection) == 0:
                 selection = cys_atom
             else:
@@ -118,42 +119,43 @@ def select_hi_atoms(protein):
     return selection
 
 
-def select_pi_atoms(protein):
+def select_pi_atoms(protein_atoms):
     """ This function returns all negatively charged atoms from a protein. """
     selection = ''
     for resname in pi_sel_dict.keys():
         for name in pi_sel_dict[resname]:
             if len(selection) == 0:
-                selection = protein[(protein['resname'] == resname) & (protein['name'] == name)]
+                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
             else:
-                selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                               (protein['name'] == name)]), axis=0)
+                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                     (protein_atoms['name'] == name)]), axis=0)
     # need to check protonation state
     if len(selection) > 1:
         selection.sort(order='atomid')
     return selection
 
 
-def select_ni_atoms(protein):
+def select_ni_atoms(protein_atoms):
     """ This function returns all positively charged atoms from a protein. """
     selection = ''
     for resname in ni_sel_dict.keys():
         for name in ni_sel_dict[resname]:
             if len(selection) == 0:
-                selection = protein[(protein['resname'] == resname) & (protein['name'] == name)]
-                selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                               (protein['name'] == name)]), axis=0)
+                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
+                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                     (protein_atoms['name'] == name)]), axis=0)
             else:
-                selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                               (protein['name'] == name)]), axis=0)
-                selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                               (protein['name'] == name)]), axis=0)
-    # histidine protonations
-    his_sel = protein[((protein['resname'] == 'HIS') | (protein['resname'] == 'HSD') | (protein['resname'] == 'HSE') |
-                       (protein['resname'] == 'HSP')) & ((protein['name'] == 'ND1') | (protein['name'] == 'NE2'))]
+                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                     (protein_atoms['name'] == name)]), axis=0)
+                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                     (protein_atoms['name'] == name)]), axis=0)
+    # only double protonated HIS
+    his_sel = protein_atoms[((protein_atoms['resname'] == 'HIS') | (protein_atoms['resname'] == 'HSD') |
+                             (protein_atoms['resname'] == 'HSE') | (protein_atoms['resname'] == 'HSP')) &
+                            ((protein_atoms['name'] == 'ND1') | (protein_atoms['name'] == 'NE2'))]
     for his_atom in his_sel:
-        if len(protein[(protein['resid'] == his_atom['resid']) & ((protein['name'] == 'HD1') |
-                                                                  (protein['name'] == 'HE2'))]) == 2:
+        if len(protein_atoms[(protein_atoms['resid'] == his_atom['resid']) & ((protein_atoms['name'] == 'HD1') |
+                                                                  (protein_atoms['name'] == 'HE2'))]) == 2:
             if len(selection) == 0:
                 selection = his_atom
             else:
@@ -163,17 +165,29 @@ def select_ni_atoms(protein):
     return selection
 
 
-def select_ai_atoms(protein):
+def select_ai_atoms(protein_atoms):
     """ This function returns atoms for defining aromatic centers from a topology. """
     selection = ''
     for resname in ai_sel_dict.keys():
-        for aromatic_ring in ai_sel_dict[resname]:
-            for name in aromatic_ring:
+        for ai_group in ai_sel_dict[resname]:
+            for name in ai_group:
                 if len(selection) == 0:
-                    selection = protein[(protein['resname'] == resname) & (protein['name'] == name)]
+                    selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
                 else:
-                    selection = np.concatenate((selection, protein[(protein['resname'] == resname) &
-                                                                   (protein['name'] == name)]), axis=0)
+                    selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
+                                                                         (protein_atoms['name'] == name)]), axis=0)
+    # only single protonated HIS
+    his_sel = protein_atoms[((protein_atoms['resname'] == 'HIS') | (protein_atoms['resname'] == 'HSD') |
+                             (protein_atoms['resname'] == 'HSE') | (protein_atoms['resname'] == 'HSP')) &
+                            ((protein_atoms['name'] == 'CG') | (protein_atoms['name'] == 'CD2') |
+                             (protein_atoms['name'] == 'CE1'))]
+    for his_atom in his_sel:
+        if len(protein_atoms[(protein_atoms['resid'] == his_atom['resid']) &
+               ((protein_atoms['name'] == 'HD1') | (protein_atoms['name'] == 'HE2'))]) == 1:
+            if len(selection) == 0:
+                selection = his_atom
+            else:
+                selection = np.concatenate((selection, np.array([his_atom])), axis=0)
     if len(selection) > 1:
         selection.sort(order='atomid')
     return selection
@@ -232,14 +246,36 @@ def buriedness(center_position, positions):
     return score
 
 
-def ai_partner_position(B, alpha, b, c_length):
-    """ This function returns the position of an interacting aromatic center. """
-    if alpha > 1.5707963267948966:
-        b = [-1 * x for x in b]
-        alpha -= 1.5707963267948966
-    b_length_old = norm(b)
-    b_length_new = adjacent(alpha, c_length)
-    return [X - ((x / b_length_old) * b_length_new) for X, x in zip(B, b)]
+def ai_geometry(AB, AC):
+    """ This function returns elements of an rectangular triangle important for ai calculation. """
+    alpha = vector_angle(AB, AC)
+    if alpha > 90:
+        AC = [-1 * x for x in AC]
+        alpha = 180 - alpha
+    return [AC, alpha]
+
+
+def pi_stacking_partner_position(B, AC, c, alpha):
+    """ This function returns the position of an interacting aromatic center for pi-stacking. """
+    b = norm(AC)
+    b_new = adjacent(alpha, c)
+    return [[x - ((y / b) * b_new) for x, y in zip(B, AC)]]
+
+
+def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
+    """ This function returns the position of an interacting aromatic center for t-stacking. """
+    b = norm(AC)
+    b_new = adjacent(alpha, c)
+    C = [x + ((y / b) * b_new) for x, y in zip(A, AC)]
+    BC = vector(B, C)
+    if radial:
+        vectors = [BC]
+        vectors += [rotate_vector(BC, AC, x)for x in [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165]]
+        positions = [[x + ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
+        positions += [[x - ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
+        return positions
+    else:
+        return [[x + ((y / a) * 5) for x, y in zip(B, BC)]]
 
 
 def dmif_processing(results, traj_number, length):

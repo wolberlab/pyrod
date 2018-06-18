@@ -6,7 +6,6 @@ dMIFs and pharmacophores.
 
 # python standard libraries
 import warnings
-import multiprocessing
 
 # external libraries
 import MDAnalysis as mda
@@ -100,7 +99,7 @@ def exclusion_volume_parameters(config):
     return [ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius]
 
 
-def feature_parameters(config, feature_names=feature_names):
+def feature_parameters(config):
     features_per_feature_type = int(config.get('feature parameters', 'features per feature type'))
     mp = config.get('feature parameters', 'number of processes')
     if len(mp) > 0:

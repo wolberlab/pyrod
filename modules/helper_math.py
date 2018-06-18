@@ -5,8 +5,9 @@ This module contains helper functions for mathematical operations.
 
 
 # external libraries
+import math
 import numpy as np
-from scipy.spatial.distance import pdist, squareform
+from scipy.spatial.distance import pdist
 
 
 def distance(x, y):
@@ -16,7 +17,7 @@ def distance(x, y):
 
 def maximal_distance(positions):
     """ This function returns the maximal distance between coordinates in three dimensional space. """
-    return np.amax(squareform(pdist(positions)))
+    return np.amax(pdist(positions))
 
 
 def mean(data):
@@ -35,30 +36,24 @@ def standard_deviation(data):
     return (squared_deviations_from_mean(data) / len(data)) ** 0.5
 
 
-def angle(a, b, c):
-    """ This function returns the angle in degrees between 3 coordinates with b in the center. """
-    ba = a - b
-    bc = c - b
-    cosine_angle = np.dot(ba, bc)
-    sine_angle = np.linalg.norm(np.cross(ba, bc))
-    return np.degrees(np.arctan2(sine_angle, cosine_angle))
+def vector(a, b):
+    """ This function returns the vector in 3-dimensional space going from a to b. """
+    return [b[0] - a[0], b[1] - a[1], b[2]- a[2]]
 
 
-def vector_angle(a, b):
-    """ This function returns the angle in rad between 2 vectors. """
-    cosine_angle = np.dot(a, b)
-    sine_angle = np.linalg.norm(np.cross(a, b))
-    return np.arctan2(sine_angle, cosine_angle)
+def dot_product(a, b):
+    """ This function returns the dot product of 3-dimensional vectors a and b. """
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def cross_product(a, b):
+    """ This function returns the cross product of 3-dimensional vectors a and b. """
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
 
 
 def normal(a, b, c):
     """ This function returns the normal of a plane defined by 3 points with b as the origin of the normal. """
-    ba = [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-    bc = [c[0] - b[0], c[1] - b[1], c[2] - b[2]]
-    n = [ba[1] * bc[2] - ba[2] * bc[1],
-         ba[2] * bc[0] - ba[0] * bc[2],
-         ba[0] * bc[1] - ba[1] * bc[0]]
-    return n
+    return cross_product(vector(b, a), vector(b, c))
 
 
 def norm(vector):
@@ -66,18 +61,52 @@ def norm(vector):
     return ((vector[0] ** 2) + (vector[1] ** 2) + (vector[2] ** 2)) ** 0.5
 
 
+def angle(a, b, c):
+    """ This function returns the angle in degrees between 3 coordinates with b in the center. """
+    ba = vector(b, a)
+    bc = vector(b, c)
+    cosine_angle = dot_product(ba, bc)
+    sine_angle = norm(cross_product(ba, bc))
+    return math.degrees(math.atan2(sine_angle, cosine_angle))
+
+
+def vector_angle(a, b):
+    """ This function returns the angle in degrees between 2 3-dimensional vectors. """
+    cosine_angle = dot_product(a, b)
+    sine_angle = norm(cross_product(a, b))
+    return math.degrees(math.atan2(sine_angle, cosine_angle))
+
+
 def opposite(alpha, c):
     """ This function returns the length of opposite a in a rectangular triangle by using angle alpha and the length of
     hypotenuse c. """
-    a = np.sin(alpha) * c
+    a = math.sin(math.radians(alpha)) * c
     return a
 
 
-def adjacent(alpha, c_length):
+def adjacent(alpha, c):
     """ This function returns the length of adjacent b in a rectangular triangle by using angle alpha and the length of
         hypotenuse c. """
-    b_length = np.cos(alpha) * c_length
-    return b_length
+    b = math.cos(math.radians(alpha)) * c
+    return b
+
+
+def rotate_vector(vector, axis, angle):
+    """ This function rotates a vector around a given axis for a given angle and returns a new vector scaled by given
+    length. """
+    angle = math.radians(angle)
+    axis_length = norm(axis)
+    axis = [axis[0] / axis_length, axis[1] / axis_length, axis[2] / axis_length]
+    x = (vector[0] * (math.cos(angle) + ((axis[0] ** 2) * (1 - math.cos(angle))))) + \
+        (vector[1] * ((axis[0] * axis[1] * (1 - math.cos(angle))) - (axis[2] * math.sin(angle)))) + \
+        (vector[2] * ((axis[0] * axis[2] * (1 - math.cos(angle))) + (axis[1] * math.sin(angle))))
+    y = (vector[0] * ((axis[1] * axis[0] * (1 - math.cos(angle))) + (axis[2] * math.sin(angle)))) + \
+        (vector[1] * (math.cos(angle) + ((axis[1] ** 2) * (1 - math.cos(angle))))) + \
+        (vector[2] * ((axis[1] * axis[2] * (1 - math.cos(angle))) - (axis[0] * math.sin(angle))))
+    z = (vector[0] * ((axis[2] * axis[0] * (1 - math.cos(angle))) - (axis[1] * math.sin(angle)))) + \
+        (vector[1] * ((axis[2] * axis[1] * (1 - math.cos(angle))) + (axis[0] * math.sin(angle)))) + \
+        (vector[2] * (math.cos(angle) + ((axis[2] ** 2) * (1 - math.cos(angle)))))
+    return [x, y, z]
 
 
 def maximal_angle(positions, center_position, origin_position=None):

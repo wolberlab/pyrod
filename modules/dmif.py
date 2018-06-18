@@ -5,7 +5,6 @@ This module analyzes molecular dynamics simulations and stores the results in ar
 
 # python standard libraries
 import time
-import logging
 import warnings
 
 # external libraries
@@ -16,20 +15,24 @@ from scipy.spatial import cKDTree
 # pyrod modules
 try:
     from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
-        sel_cutoff_dict, ai_score_dict
+        sel_cutoff_dict, pi_stacking_distance_score_dict, t_stacking_distance_score_dict, ai_pi_distance_score_dict, \
+        AI_PI_ANGLE_CUTOFF
     from pyrod.modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
-        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, ai_partner_position, grid_parameters, \
-        grid_partners_to_array
-    from pyrod.modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
+        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, pi_stacking_partner_position, \
+        grid_parameters, grid_partners_to_array, ai_geometry, t_stacking_partner_position
+    from pyrod.modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
+        cross_product
     from pyrod.modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
     from pyrod.modules.helper_write import setup_logger
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, don_hydrogen_dict, acceptors, \
-        sel_cutoff_dict, ai_score_dict
+        sel_cutoff_dict, pi_stacking_distance_score_dict, t_stacking_distance_score_dict, ai_pi_distance_score_dict, \
+        AI_PI_ANGLE_CUTOFF
     from modules.helper_dmif import select_protein, select_hb_atoms, select_hi_atoms, select_ni_atoms, \
-        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, ai_partner_position, \
-        grid_parameters, grid_partners_to_array
-    from modules.helper_math import distance, angle, normal, opposite, norm, vector_angle
+        select_pi_atoms, select_ai_atoms, select_metal_atoms, buriedness, pi_stacking_partner_position, \
+        grid_parameters, grid_partners_to_array, ai_geometry, t_stacking_partner_position
+    from modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
+        cross_product
     from modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
     from modules.helper_write import setup_logger
 
@@ -55,12 +58,12 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
     positions = np.array([[x, y, z] for x, y, z in zip(grid_score['x'], grid_score['y'], grid_score['z'])])
     x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_parameters(positions)[:-1]
     tree = cKDTree(positions)
-    protein = select_protein(topology)
-    hb_atoms = select_hb_atoms(protein)
-    hi_atoms = select_hi_atoms(protein)
-    pi_atoms = select_pi_atoms(protein)
-    ni_atoms = select_ni_atoms(protein)
-    ai_atoms = select_ai_atoms(protein)
+    protein_atoms = select_protein(topology)
+    hb_atoms = select_hb_atoms(protein_atoms)
+    hi_atoms = select_hi_atoms(protein_atoms)
+    pi_atoms = select_pi_atoms(protein_atoms)
+    ni_atoms = select_ni_atoms(protein_atoms)
+    ai_atoms = select_ai_atoms(protein_atoms)
     metal_atoms = select_metal_atoms(topology, metal_names)
     start = time.time()
     for frame, _ in enumerate(u.trajectory[first_frame:last_frame:]):
@@ -139,9 +142,9 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     if hb_resname in don_hydrogen_dict.keys():
                         if hb_name in don_hydrogen_dict[hb_resname].keys():
                             for h_name in don_hydrogen_dict[hb_resname][hb_name]:
-                                h_inds = protein[((protein['resname'] == hb_resname) &
-                                                  (protein['resid'] == hb_resid) &
-                                                  (protein['name'] == h_name))]['atomid']
+                                h_inds = protein_atoms[((protein_atoms['resname'] == hb_resname) &
+                                                        (protein_atoms['resid'] == hb_resid) &
+                                                        (protein_atoms['name'] == h_name))]['atomid']
                                 if len(h_inds) > 0:
                                     min_dis_ind = 0
                                     # if multiple hydrogen atoms met the selection criteria above, e.g. multimers
@@ -219,28 +222,60 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     hi += 1
                     if len(hi_list) > 1:
                         hi += buriedness(o_coor, hi_positions[hi_list])
-                    # 2.6 / 4 = 0.65 --> definitely not involved in a charged hydrogen bond
+                if hi > 0:
+                    # no charged amino acid within hydrogen bond distance
                     if ni < 0.65 > pi:
                         grid_score['hi'][inds] += hi
-                    if ha + hd > 0:
-                        grid_score['hi_hb'][inds] += hi
+                        if ha + hd > 0:
+                            grid_score['hi_hb'][inds] += hi
                 # aromatic interactions
                 for ai_ind in ai_list:
                     ai_i = ai_positions[ai_ind]
                     ai_n = ai_normals[ai_ind]
+                    # pi-cation interactions
+                    if round(distance(o_coor, ai_i), 1) >= 3.1:
+                        ai_vector_angle = vector_angle(ai_n, vector(ai_i, o_coor))
+                        if ai_vector_angle <= AI_PI_ANGLE_CUTOFF or ai_vector_angle >= (180 - AI_PI_ANGLE_CUTOFF):
+                            grid_score['pi'][inds] += ai_pi_distance_score_dict[round(distance(o_coor, ai_i), 1)]
+                    # pi- and t-stacking grid point wise
                     for ind in inds:
                         grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
-                        ai_distance = round(distance(grid_point, ai_i), 1)
+                        ai_distance = distance(grid_point, ai_i)
                         # check distance between grid point and aromatic center
-                        if 2.6 <= ai_distance <= 4.4:
-                            c = [grid_point[0] - ai_i[0], grid_point[1] - ai_i[1], grid_point[2] - ai_i[2]]
-                            alpha = vector_angle(ai_n, c)
-                            c_length = norm(c)
-                            # check offset between grid point and aromatic center
-                            if opposite(alpha, c_length) <= 1.5:
-                                grid_score['ai'][ind] += ai_score_dict[ai_distance]
-                                grid_partners[ind][grid_list_dict['ai_i']] += [ai_partner_position(grid_point, alpha,
-                                                                                                   ai_n, c_length)]
+                        if 3.3 <= ai_distance <= 6.0:
+                            ai_vector = vector(ai_i, grid_point)
+                            ai_n, alpha = ai_geometry(ai_vector, ai_n)
+                            # pi- and t-stacking with pi-system of protein aromatic center
+                            if alpha < 45:
+                                offset = opposite(alpha, ai_distance)
+                                # pi-stacking
+                                if ai_distance <= 4.7:
+                                    # check offset between grid point and aromatic center
+                                    if 0.001 <= offset <= 2.0:
+                                        grid_score['ai'][ind] += pi_stacking_distance_score_dict[round(ai_distance, 1)]
+                                        grid_partners[ind][grid_list_dict['ai_i']] += pi_stacking_partner_position(
+                                                                                      grid_point, ai_n,
+                                                                                      ai_distance, alpha)
+                                # t-stacking
+                                else:
+                                    # check offset between grid point and aromatic center
+                                    if 0.001 <= offset <= 0.5:
+                                        grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
+                                        grid_partners[ind][grid_list_dict['ai_i']] += t_stacking_partner_position(
+                                                                                      ai_i, grid_point, ai_n, offset,
+                                                                                      ai_distance, alpha, True)
+                            # t-stacking with hydrogen of protein aromatic center
+                            else:
+                                if ai_distance >= 4.6:
+                                    # check offset between grid point and aromatic center
+                                    offset = adjacent(alpha, ai_distance)
+                                    if 0.001 <= offset <= 0.5:
+                                        ai_n2 = cross_product(ai_n, cross_product(ai_n, ai_vector))
+                                        ai_n2, alpha = ai_geometry(ai_vector, ai_n2)
+                                        grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
+                                        grid_partners[ind][grid_list_dict['ai_i']] += t_stacking_partner_position(
+                                                                                      ai_i, grid_point, ai_n2,
+                                                                                      offset, ai_distance, alpha)
         # adding scores to grid
         grid_score['shape'][shape_inds] += 1
         grid_score['ha'][ha_inds] += 1
