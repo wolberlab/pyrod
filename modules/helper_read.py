@@ -5,12 +5,7 @@ This module contains helper functions to write out data.
 
 
 # python standard libraries
-import os
-import copy
 import xml.etree.ElementTree as et
-
-# external libraries
-import numpy as np
 
 # pyrod modules
 try:

@@ -38,7 +38,7 @@ except ImportError:
 
 
 def dmif(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score,
-         grid_partners, first_frame, last_frame, water_name, metal_names, directory, debugging):
+         grid_partners, first_frame, last_frame, water_name, metal_names, directory, debugging, get_partners):
     logger = setup_logger('_'.join(['trajectory', str(counter + 1)]), directory, debugging)
     logger.info('Started analysis of trajectory {}.'.format(counter + 1))
     check_progress, final, past_frames, future_frames = update_progress_dmif_parameters(
@@ -178,31 +178,36 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     # single
                     if ha == 1:
                         ha_inds += inds
-                        for ind in inds:
-                            grid_partners[ind][grid_list_dict['ha_i']] += ha_i
+                        if get_partners:
+                            for ind in inds:
+                                grid_partners[ind][grid_list_dict['ha_i']] += ha_i
                     # double
                     elif ha == 2:
                         ha2_inds += inds
-                        for ind in inds:
-                            grid_partners[ind][grid_list_dict['ha2_i']] += ha_i
+                        if get_partners:
+                            for ind in inds:
+                                grid_partners[ind][grid_list_dict['ha2_i']] += ha_i
                 # single hydrogen bond donors
                 elif hd == 1:
                     # single donor
                     if ha == 0:
                         hd_inds += inds
-                        for ind in inds:
-                            grid_partners[ind][grid_list_dict['hd_i']] += hd_i
+                        if get_partners:
+                            for ind in inds:
+                                grid_partners[ind][grid_list_dict['hd_i']] += hd_i
                     # mixed donor acceptor
                     elif ha == 1:
                         hda_inds += inds
-                        for ind in inds:
-                            grid_partners[ind][grid_list_dict['hda_id']] += hd_i
-                            grid_partners[ind][grid_list_dict['hda_ia']] += ha_i
+                        if get_partners:
+                            for ind in inds:
+                                grid_partners[ind][grid_list_dict['hda_id']] += hd_i
+                                grid_partners[ind][grid_list_dict['hda_ia']] += ha_i
                 else:
                     # double hydrogen bond donor
                     hd2_inds += inds
-                    for ind in inds:
-                        grid_partners[ind][grid_list_dict['hd2_i']] += hd_i
+                    if get_partners:
+                        for ind in inds:
+                            grid_partners[ind][grid_list_dict['hd2_i']] += hd_i
                 # ionizable interactions
                 # sum up negative ionizable
                 for ni_ind in ni_list:
@@ -253,17 +258,18 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                                     # check offset between grid point and aromatic center
                                     if 0.001 <= offset <= 2.0:
                                         grid_score['ai'][ind] += pi_stacking_distance_score_dict[round(ai_distance, 1)]
-                                        grid_partners[ind][grid_list_dict['ai_i']] += pi_stacking_partner_position(
-                                                                                      grid_point, ai_n,
-                                                                                      ai_distance, alpha)
+                                        if get_partners:
+                                            grid_partners[ind][grid_list_dict['ai_i']] += \
+                                                pi_stacking_partner_position(grid_point, ai_n, ai_distance, alpha)
                                 # t-stacking
                                 else:
                                     # check offset between grid point and aromatic center
                                     if 0.001 <= offset <= 0.5:
                                         grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
-                                        grid_partners[ind][grid_list_dict['ai_i']] += t_stacking_partner_position(
-                                                                                      ai_i, grid_point, ai_n, offset,
-                                                                                      ai_distance, alpha, True)
+                                        if get_partners:
+                                            grid_partners[ind][grid_list_dict['ai_i']] += \
+                                                t_stacking_partner_position(ai_i, grid_point, ai_n, offset,
+                                                                            ai_distance, alpha, True)
                             # t-stacking with hydrogen of protein aromatic center
                             else:
                                 if ai_distance >= 4.6:
@@ -273,9 +279,10 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                                         ai_n2 = cross_product(ai_n, cross_product(ai_n, ai_vector))
                                         ai_n2, alpha = ai_geometry(ai_vector, ai_n2)
                                         grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
-                                        grid_partners[ind][grid_list_dict['ai_i']] += t_stacking_partner_position(
-                                                                                      ai_i, grid_point, ai_n2,
-                                                                                      offset, ai_distance, alpha)
+                                        if get_partners:
+                                            grid_partners[ind][grid_list_dict['ai_i']] += \
+                                                t_stacking_partner_position(ai_i, grid_point, ai_n2, offset,
+                                                                            ai_distance, alpha)
         # adding scores to grid
         grid_score['shape'][shape_inds] += 1
         grid_score['ha'][ha_inds] += 1

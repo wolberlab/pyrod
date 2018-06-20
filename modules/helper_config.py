@@ -19,56 +19,24 @@ except ImportError:
     from modules.lookup import feature_names
 
 
-def main_parameters(config):
-    test_grid_generation, dmif_generation, exclusion_volume_generation, feature_generation, pharmacophore_generation, \
-        library_generation = False, False, False, False, False, False
-    try:
-        if config.get('grid parameters', 'test grid generation') == 'true':
-            test_grid_generation = True
-    except KeyError:
-        pass
-    try:
-        if config.get('dmif parameters', 'dmif generation') == 'true':
-            dmif_generation = True
-    except KeyError:
-        pass
-    try:
-        if config.get('exclusion volume parameters', 'exclusion volume generation') == 'true':
-            exclusion_volume_generation = True
-    except KeyError:
-        pass
-    try:
-        if config.get('feature parameters', 'feature generation') == 'true':
-            feature_generation = True
-    except KeyError:
-        pass
-    try:
-        if config.get('pharmacophore parameters', 'pharmacophore generation') == 'true':
-            pharmacophore_generation = True
-    except KeyError:
-        pass
-    try:
-        if config.get('library parameters', 'library generation') == 'true':
-            library_generation = True
-    except KeyError:
-        pass
-    return [test_grid_generation, dmif_generation, exclusion_volume_generation, feature_generation,
-            pharmacophore_generation, library_generation]
-
-
-def grid_parameters(config):
-    center = [float(x.strip()) for x in config.get('grid parameters', 'center').split(',')]
-    edge_lengths = [float(x.strip()) for x in config.get('grid parameters', 'edge lengths').split(',')]
-    space = float(config.get('grid parameters', 'grid space'))
+def test_grid_parameters(config):
+    center = [float(x.strip()) for x in config.get('test grid parameters', 'center').split(',')]
+    edge_lengths = [float(x.strip()) for x in config.get('test grid parameters', 'edge lengths').split(',')]
+    space = float(config.get('test grid parameters', 'grid space'))
     name = '_'.join(str(_) for _ in center + edge_lengths + [space])
     return [center, edge_lengths, space, name]
 
 
 def dmif_parameters(config):
+    center = [float(x.strip()) for x in config.get('dmif parameters', 'center').split(',')]
+    edge_lengths = [float(x.strip()) for x in config.get('dmif parameters', 'edge lengths').split(',')]
+    space = float(config.get('dmif parameters', 'grid space'))
     topology = config.get('dmif parameters', 'topology')
     trajectories = [x.strip() for x in config.get('dmif parameters', 'trajectories').split(',')]
     traj_number = len(trajectories)
-    first_frame = int(config.get('dmif parameters', 'first frame')) - 1
+    first_frame = 0
+    if len(config.get('dmif parameters', 'first frame')) > 0:
+        first_frame = int(config.get('dmif parameters', 'first frame')) - 1
     last_frame = None
     if len(config.get('dmif parameters', 'last frame')) > 0:
         last_frame = int(config.get('dmif parameters', 'last frame'))
@@ -86,8 +54,12 @@ def dmif_parameters(config):
         mp = int(mp)
     else:
         mp = 1
-    return [topology, trajectories, traj_number, first_frame, last_frame, length, water_name, metal_names, map_formats,
-            mp]
+    get_partners = True
+    if config.has_option('dmif parameters', 'dmifs only'):
+        if config.get('dmif parameters', 'dmifs only') == 'true':
+            get_partners = False
+    return [center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length,
+            water_name, metal_names, map_formats, mp, get_partners]
 
 
 def exclusion_volume_parameters(config):

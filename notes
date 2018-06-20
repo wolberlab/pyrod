@@ -4,19 +4,6 @@ hi features:
    will often be hydrogen bonded)
  - limiting hi to areas with shape >= 10 and dividing hi by shape --> looks bad
 
-
-ai features:
- - aromatic interactions will slow down code a lot (would need to calculate ai scores for each grid point separately)
- - ai-pi (needs normals of planes)
-    partial charges from OPLS 2005
-    PHE: 6 * -0.115 = -0.69
-    TYR: 5 * -0.115 + 0.15 = -0.54
-    TRP: -0.57 - 0.115 - 0.055 + 0.075 + 0.13 = -0.685
-         4 * -0.115 - 0.055 + 0.13 = -0.385
-    HIS: -0.658 + 0.285 - 0.075 - 0.4 + 0.245 = -0.603
-
-
-
     |id| type | [x, y, z] |tolerance|[[x_i,y_i,z_i]]|tolerance_i|score|volume|
  0   0    hi     origin      (1.5)         -              -
  1   1    pi     origin      (1.5)         -              -

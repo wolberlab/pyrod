@@ -1,3 +1,7 @@
+* v0.7.0
+ - separate config files for separate tasks
+ - dmif only mode available
+ - minor changes
 * v0.6.3
  - added t-stacking
  - minor changes

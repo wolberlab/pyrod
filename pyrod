@@ -10,7 +10,6 @@ import configparser
 import multiprocessing
 import os
 import pickle
-import sys
 import time
 
 # pyrod modules
@@ -18,8 +17,8 @@ try:
     from pyrod.modules.dmif import dmif
     from pyrod.modules.lookup import logo, __version__, help_description, feature_names
     from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
-    from pyrod.modules.helper_config import main_parameters, grid_parameters, dmif_parameters, \
-        exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters
+    from pyrod.modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
+        feature_parameters, pharmacophore_parameters, library_parameters
     from pyrod.modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing
     from pyrod.modules.helper_pharmacophore import features_processing, select_features
     from pyrod.modules.helper_update import update_user, time_to_text
@@ -29,7 +28,7 @@ except ImportError:
     from modules.dmif import dmif
     from modules.lookup import logo, __version__, help_description, feature_names
     from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
-    from modules.helper_config import main_parameters, grid_parameters, dmif_parameters, exclusion_volume_parameters, \
+    from modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
         feature_parameters, pharmacophore_parameters, library_parameters
     from modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing
     from modules.helper_pharmacophore import features_processing, select_features
@@ -53,27 +52,22 @@ if __name__ == '__main__':
     logger = setup_logger('main', directory, debugging)
     update_user('\n'.join(logo), logger)
     logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('directory')]))
-    test_grid_generation, dmif_generation, exclusion_volume_generation, feature_generation, pharmacophore_generation, \
-        library_generation = main_parameters(config)
     # defining grid
-    if test_grid_generation:
-        logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('grid parameters')]))
-        center, edge_lengths, space, name = grid_parameters(config)
+    if config.has_section('test grid parameters'):
+        logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('test grid parameters')]))
+        center, edge_lengths, space, name = test_grid_parameters(config)
         grid = grid_generator(center, edge_lengths, space)
         pdb_writer(positions=grid, name=name, path=''.join([directory, '/test']))
         update_user('Writing test grid to {}/test.'.format(directory), logger)
-        sys.exit()
     # generating dmifs
-    if dmif_generation:
-        logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('grid parameters')]))
+    if config.has_section('dmif parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('dmif parameters')]))
-        center, edge_lengths, space = grid_parameters(config)[:-1]
-        topology, trajectories, traj_number, first_frame, last_frame, length, water_name, metal_names, map_formats, \
-            mp = dmif_parameters(config)
+        center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length, water_name, \
+            metal_names, map_formats, mp, get_partners = dmif_parameters(config)
         update_user('Initializing grid.', logger)
         grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths, space))
         args = [(topology, trajectory, counter, length, mp, traj_number, grid_score, grid_partners, first_frame,
-                 last_frame, water_name, metal_names, directory, debugging) for counter, trajectory in
+                 last_frame, water_name, metal_names, directory, debugging, get_partners) for counter, trajectory in
                 enumerate(trajectories)]
         if traj_number > 1:
             update_user('Analyzing {} trajectories.'.format(traj_number), logger)
@@ -87,16 +81,17 @@ if __name__ == '__main__':
         dmif, partners = dmif_processing(results, traj_number, length)
         del results
         pickle_writer(dmif, 'dmif', '/'.join([directory, 'data']), logger)
-        pickle_writer(partners, 'partners', '/'.join([directory, 'data']), logger)
+        if get_partners:
+            pickle_writer(partners, 'partners', '/'.join([directory, 'data']), logger)
         update_user('Writing maps to {}/dmifs.'.format(directory), logger)
         for map_format in map_formats:
             for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
                 dmif_writer(dmif, feature_name, file_format=map_format, name=feature_name,
                             directory='/'.join([directory, 'dmifs']))
     # generating exclusion volumes
-    if exclusion_volume_generation:
+    if config.has_section('exclusion volume parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('exclusion volume parameters')]))
-        if len(config.get('exclusion volume parameters', 'dmif')) > 0:
+        if config.has_option('exclusion volume parameters', 'dmif'):
             update_user('Loading dmif from {}.'.format(config.get('exclusion volume parameters', 'dmif')), logger)
             dmif = pickle.load(open(config.get('exclusion volume parameters', 'dmif'), 'rb'))
         ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius = exclusion_volume_parameters(config)
@@ -104,12 +99,12 @@ if __name__ == '__main__':
                                          ev_radius, ev_space)
         pickle_writer(evs, 'exclusion_volumes', '/'.join([directory, 'data']), logger)
     # generating features
-    if feature_generation:
+    if config.has_section('feature parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('feature parameters')]))
-        if len(config.get('feature parameters', 'dmif')) > 0:
+        if config.has_option('feature parameters', 'dmif'):
             update_user('Loading dmif from {}.'.format(config.get('feature parameters', 'dmif')), logger)
             dmif = pickle.load(open(config.get('feature parameters', 'dmif'), 'rb'))
-        if len(config.get('feature parameters', 'partners')) > 0:
+        if config.has_option('feature parameters', 'partners'):
             update_user('Loading partner from {}.'.format(config.get('feature parameters', 'partners')), logger)
             partners = pickle.load(open(config.get('feature parameters', 'partners'), 'rb'))
         features_per_feature_type, mp = feature_parameters(config)
@@ -123,12 +118,12 @@ if __name__ == '__main__':
         features = features_processing(results, features_per_feature_type)
         pickle_writer(features, 'features', '/'.join([directory, 'data']), logger)
     # pharmacophore generation
-    if pharmacophore_generation:
+    if config.has_section('pharmacophore parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('pharmacophore parameters')]))
-        if len(config.get('pharmacophore parameters', 'features')) > 0:
+        if config.has_option('pharmacophore parameters', 'features'):
             update_user('Loading features from {}.'.format(config.get('pharmacophore parameters', 'features')), logger)
             features = pickle.load(open(config.get('pharmacophore parameters', 'features'), 'rb'))
-        if len(config.get('pharmacophore parameters', 'exclusion volumes')) > 0:
+        if config.has_option('pharmacophore parameters', 'exclusion volumes'):
             update_user('Loading exclusion volumes from {}.'.format(config.get('pharmacophore parameters',
                                                                                'exclusion volumes')), logger)
             evs = pickle.load(open(config.get('pharmacophore parameters', 'exclusion volumes'), 'rb'))
@@ -148,7 +143,7 @@ if __name__ == '__main__':
                 pharmacophore_writer(selected_features + evs, pharmacophore_format, best_name, pharmacophore_directory,
                                      weight)
     # library generation
-    if library_generation:
+    if config.has_section('library parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('library parameters')]))
         library_generator(*library_parameters(config, directory))
     update_user('Finished after {}.'.format(time_to_text(time.time() - start_time)), logger)

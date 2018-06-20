@@ -270,7 +270,7 @@ def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
     BC = vector(B, C)
     if radial:
         vectors = [BC]
-        vectors += [rotate_vector(BC, AC, x)for x in [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165]]
+        vectors += [rotate_vector(BC, AC, x)for x in [30, 60, 90, 120, 150]]
         positions = [[x + ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
         positions += [[x - ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
         return positions
