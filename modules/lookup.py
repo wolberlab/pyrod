@@ -7,9 +7,9 @@ This module contains dictionaries and tuples used by by different pyrod modules.
 import shutil
 
 
-__version__ = '0.7.0'  # PyRod version
+__version__ = '0.7.1'  # PyRod version
 grid_score_dict = {'x': 0, 'y': 1, 'z': 2, 'shape': 3, 'ha': 4, 'hd': 5, 'ha2': 6, 'hd2': 7, 'hda': 8, 'ni': 9,
-                   'pi': 10, 'hi': 11, 'hi_hb': 12, 'ai': 13, 'tw': 14}
+                   'pi': 10, 'hi': 11, 'hi_norm': 12, 'ai': 13, 'tw': 14}
 grid_list_dict = {'ha_i': 0, 'hd_i': 1, 'ha2_i': 2, 'hd2_i': 3, 'hda_ia': 4, 'hda_id': 5, 'ai_i': 6}
 hb_dist_dict = {'O': 3.2, 'N': 3.3, 'S': 3.9}
 hb_angl_dict = {'O': 130, 'N': 130, 'S': 130}

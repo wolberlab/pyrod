@@ -1,3 +1,8 @@
+* v0.7.1
+ - added dmif excess analysis to compare dmifs
+ - changed hi_hb to hi_norm, allows better comparison of hydrophobicity
+ - corrected error in ai partner calculation
+ - minor changes
 * v0.7.0
  - separate config files for separate tasks
  - dmif only mode available

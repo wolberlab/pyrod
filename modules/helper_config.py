@@ -48,7 +48,9 @@ def dmif_parameters(config):
         length = last_frame - first_frame
     water_name = config.get('dmif parameters', 'water name')
     metal_names = [x.strip() for x in config.get('dmif parameters', 'metal names').split(',')]
-    map_formats = [x.strip() for x in config.get('dmif parameters', 'map formats').split(',')]
+    map_formats = []
+    if len(config.get('dmif parameters', 'map formats')) > 0:
+        map_formats = [x.strip() for x in config.get('dmif parameters', 'map formats').split(',')]
     mp = config.get('dmif parameters', 'number of processes')
     if len(mp) > 0:
         mp = int(mp)
@@ -121,6 +123,9 @@ def library_parameters(config, path):
     pyrod_pharmacophore = False
     if config.get('library parameters', 'pyrod pharmacophore') == 'true':
         pyrod_pharmacophore = True
+    make_mandatory = False
+    if config.get('library parameters', 'make optional features mandatory') == 'true':
+        make_mandatory = True
     if len(config.get('library parameters', 'library name')) > 0:
         library_name = config.get('library parameters', 'library name')
     else:
@@ -128,4 +133,19 @@ def library_parameters(config, path):
     library_path = '/'.join([path, library_name])
     return [pharmacophore_path, minimal_features, maximal_features, maximal_hydrogen_bonds,
             maximal_hydrophobic_interactions, maximal_aromatic_interactions,
-            maximal_ionizable_interactions,  library_path, pyrod_pharmacophore]
+            maximal_ionizable_interactions,  library_path, pyrod_pharmacophore, make_mandatory]
+
+
+def dmif_excess_parameters(config):
+    dmif1_path = config.get('dmif excess parameters', 'dmif 1')
+    dmif2_path = config.get('dmif excess parameters', 'dmif 2')
+    dmif1_name = config.get('dmif excess parameters', 'dmif 1 name')
+    if len(dmif1_name) == 0:
+        dmif1_name = 'dmif1'
+    dmif2_name = config.get('dmif excess parameters', 'dmif 2 name')
+    if len(dmif2_name) == 0:
+        dmif2_name = 'dmif2'
+    map_formats = []
+    if len(config.get('dmif excess parameters', 'map formats')) > 0:
+        map_formats = [x.strip() for x in config.get('dmif parameters', 'map formats').split(',')]
+    return [dmif1_path, dmif2_path, dmif1_name, dmif2_name, map_formats]

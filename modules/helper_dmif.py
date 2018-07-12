@@ -1,11 +1,14 @@
 """ PyRod - dynamic molecular interaction fields (dMIFs), based on tracing water molecules in MD simulations.
 
-This module contains helper functions used by the dmif module.
+This module contains helper functions needed to generate and process dmifs.
 """
 
 
 # python standard library
+import copy
 import operator
+import pickle
+import sys
 
 # external libraries
 import numpy as np
@@ -14,11 +17,11 @@ import numpy.lib.recfunctions as rfn
 # pyrod modules
 try:
     from pyrod.modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
-        grid_score_dict, grid_list_dict
+        grid_score_dict, grid_list_dict, feature_names
     from pyrod.modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
 except ImportError:
     from modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
-        grid_score_dict, grid_list_dict
+        grid_score_dict, grid_list_dict, feature_names
     from modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
 
 
@@ -263,19 +266,19 @@ def pi_stacking_partner_position(B, AC, c, alpha):
 
 
 def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
-    """ This function returns the position of an interacting aromatic center for t-stacking. """
+    """ This function returns the positions of interacting aromatic centers for t-stacking. """
     b = norm(AC)
     b_new = adjacent(alpha, c)
-    C = [x + ((y / b) * b_new) for x, y in zip(A, AC)]
-    BC = vector(B, C)
     if radial:
+        C = [x + ((y / b) * b_new) for x, y in zip(A, AC)]
+        BC = vector(B, C)
         vectors = [BC]
         vectors += [rotate_vector(BC, AC, x)for x in [30, 60, 90, 120, 150]]
         positions = [[x + ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
         positions += [[x - ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
         return positions
     else:
-        return [[x + ((y / a) * 5) for x, y in zip(B, BC)]]
+        return [[x - ((y / b) * b_new) for x, y in zip(B, AC)]]
 
 
 def dmif_processing(results, traj_number, length):
@@ -291,8 +294,8 @@ def dmif_processing(results, traj_number, length):
         dmif[feature_name] = ((dmif[feature_name] * 100) / (traj_number * length))
     dmif['ni'] = np.clip(dmif['ni'], 0, None)
     dmif['pi'] = np.clip(dmif['pi'], 0, None)
-    dmif['hi_hb'] = np.divide(dmif['hi_hb'], dmif['shape'], where=dmif['shape'] >= 1)
-    dmif['hi_hb'][dmif['shape'] < 1] = 0
+    dmif['hi_norm'] = np.divide(dmif['hi_norm'], dmif['shape'], where=dmif['shape'] >= 1)
+    dmif['hi_norm'][dmif['shape'] < 1] = 0
     hb = np.array(dmif['hd'] + dmif['hd2'] + dmif['ha'] + dmif['ha2'] + dmif['hda'], dtype=[('hb', 'float64')])
     dmif = rfn.merge_arrays([dmif, hb], flatten=True, usemask=False)
     hd_combo = np.array(dmif['hd'] + dmif['hd2'] + dmif['hda'], dtype=[('hd_combo', 'float64')])
@@ -307,3 +310,20 @@ def grid_partners_to_array(grid_partners):
                              sorted([[x, grid_list_dict[x]] for x in grid_list_dict.keys()],
                              key=operator.itemgetter(1))])
     return grid_partners
+
+
+def generate_dmif_excess(dmif1_path, dmif2_path):
+    dmif1 = pickle.load(open(dmif1_path, 'rb'))
+    dmif2 = pickle.load(open(dmif2_path, 'rb'))
+    if np.array([dmif1['x'], dmif1['y'], dmif1['z']]) == np.array([dmif2['x'], dmif2['y'], dmif2['z']]):
+        dmif1_excess = copy.deepcopy(dmif1)
+        dmif2_excess = copy.deepcopy(dmif2)
+        for feature_name in feature_names:
+            dmif1_excess[feature_name] -= dmif2[feature_name]
+            dmif1_excess[feature_name] = np.clip(dmif1_excess[feature_name], 0, None)
+            dmif2_excess[feature_name] -= dmif1[feature_name]
+            dmif2_excess[feature_name] = np.clip(dmif2_excess[feature_name], 0, None)
+        return dmif1_excess, dmif2_excess
+    else:
+        print('Specified dmifs were not generated with the same grid parameters.')
+        sys.exit()

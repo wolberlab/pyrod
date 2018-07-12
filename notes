@@ -65,3 +65,26 @@ metal_names = ''
 directory = '/mdspace/pyrod/examples/1ke7_restrained3/pyrod2'
 debugging = True
 a = dmif(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score, grid_partners, first_frame, last_frame, water_name, metal_names, directory, debugging)
+
+dmif_paths = [
+              '/home/david/Documents/pyrod/equilibration/pyrod_1_100/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_101_200/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_201_300/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_301_400/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_401_500/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_501_600/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_601_700/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_701_800/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_801_900/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_901_1000/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1001_1100/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1101_1200/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1201_1300/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1301_1400/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1401_1500/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1501_1600/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1601_1700/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1701_1800/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1801_1900/data/dmif.p',
+              '/home/david/Documents/pyrod/equilibration/pyrod_1901_2000/data/dmif.p',
+             ]

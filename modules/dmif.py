@@ -228,11 +228,10 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     if len(hi_list) > 1:
                         hi += buriedness(o_coor, hi_positions[hi_list])
                 if hi > 0:
+                    grid_score['hi_norm'][inds] += hi
                     # no charged amino acid within hydrogen bond distance
                     if ni < 0.65 > pi:
                         grid_score['hi'][inds] += hi
-                        if ha + hd > 0:
-                            grid_score['hi_hb'][inds] += hi
                 # aromatic interactions
                 for ai_ind in ai_list:
                     ai_i = ai_positions[ai_ind]

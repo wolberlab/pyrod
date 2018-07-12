@@ -18,8 +18,8 @@ try:
     from pyrod.modules.lookup import logo, __version__, help_description, feature_names
     from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
     from pyrod.modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
-        feature_parameters, pharmacophore_parameters, library_parameters
-    from pyrod.modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing
+        feature_parameters, pharmacophore_parameters, library_parameters, dmif_excess_parameters
+    from pyrod.modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing, generate_dmif_excess
     from pyrod.modules.helper_pharmacophore import features_processing, select_features
     from pyrod.modules.helper_update import update_user, time_to_text
     from pyrod.modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
@@ -29,8 +29,8 @@ except ImportError:
     from modules.lookup import logo, __version__, help_description, feature_names
     from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
     from modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
-        feature_parameters, pharmacophore_parameters, library_parameters
-    from modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing
+        feature_parameters, pharmacophore_parameters, library_parameters, dmif_excess_parameters
+    from modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing, generate_dmif_excess
     from modules.helper_pharmacophore import features_processing, select_features
     from modules.helper_update import update_user, time_to_text
     from modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
@@ -146,4 +146,16 @@ if __name__ == '__main__':
     if config.has_section('library parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('library parameters')]))
         library_generator(*library_parameters(config, directory))
+    # dmif excess generation
+    if config.has_section('dmif excess parameters'):
+        dmif1_path, dmif2_path, dmif1_name, dmif2_name, map_formats = dmif_excess_parameters(config)
+        dmif1_excess, dmif2_excess = generate_dmif_excess(dmif1_path, dmif2_path)
+        update_user('Writing dmif excess maps to {0}/{1}_excess and {0}/{2}_excess.'.format(directory,
+                    dmif1_name, dmif2_name), logger)
+        for map_format in map_formats:
+            for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
+                dmif_writer(dmif1_excess, feature_name, file_format=map_format, name=feature_name,
+                            directory='{{}/{}_excess'.format(directory, dmif1_name))
+                dmif_writer(dmif2_excess, feature_name, file_format=map_format, name=feature_name,
+                            directory='{{}/{}_excess'.format(directory, dmif2_name))
     update_user('Finished after {}.'.format(time_to_text(time.time() - start_time)), logger)

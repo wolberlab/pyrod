@@ -119,7 +119,7 @@ def features_generator(dmif, partners, feature_name, features_per_feature_type, 
 
 def library_generator(pharmacophore_path, minimal_features, maximal_features, maximal_hydrogen_bonds,
                       maximal_hydrophobic_interactions, maximal_aromatic_interactions, maximal_ionizable_interactions,
-                      library_path, pyrod_pharmacophore):
+                      library_path, pyrod_pharmacophore, make_mandatory):
     super_pharmacophore, pharmacophore_library = [], []
     essential_hb_features, essential_hi_features, essential_ai_features, essential_ii_features = [], [], [], []
     optional_hb_features, optional_hi_features, optional_ai_features, optional_ii_features = [], [], [], []
@@ -210,8 +210,9 @@ def library_generator(pharmacophore_path, minimal_features, maximal_features, ma
             plane = et.SubElement(pharmacophore_template, feature.tag, feature.attrib)
             et.SubElement(plane, feature.find('position').tag, feature.find('position').attrib)
             et.SubElement(plane, feature.find('normal').tag, feature.find('normal').attrib)
-    for feature in pharmacophore_template.findall('./*[@optional="true"]'):
-        feature.attrib['optional'] = "false"
+    if make_mandatory:
+        for feature in pharmacophore_template.findall('./*[@optional="true"]'):
+            feature.attrib['optional'] = "false"
     file_path('/'.join([library_path, 'super_pharmacophore.pml']), library_path)
     et.ElementTree(pharmacophore_template).write('/'.join([library_path, 'super_pharmacophore.pml']), encoding='UTF-8',
                                                  xml_declaration=True)
