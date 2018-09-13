@@ -48,7 +48,7 @@ def grid_generator(center, edge_lengths, space):
 
 
 def dmif_data_structure(grid):
-    """ This function generates the central data structure for analyzing the trajectories. Returned will be a grid as
+    """ This function generates the central data structure for dmif analysis of trajectories. Returned will be a grid as
     numpy structured array whose first three columns are the coordinates and whose other columns are used for holding
     scores in later trajectory analysis. Additionally, a list of lists of lists will be returned with the same length
     as the grid that is used to save coordinates of interaction partners for e.g. hydrogen bonds. """

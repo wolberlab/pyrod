@@ -9,6 +9,7 @@ import copy
 import logging
 import os
 import pickle
+import sys
 import xml.etree.ElementTree as et
 
 # external libraries
@@ -103,7 +104,7 @@ def pdb_writer(positions, name, path, resname='GRI', scores=None):
     if len(positions) > 99999:
         print('Decrease number of data points. Only 99999 data points (atoms) can be written to a pdb. You '
               'attempted to write {} data points.'.format(len(positions)))
-        return
+        sys.exit()
     if scores is None:
         scores = [0] * len(positions)
     if len(positions) != len(scores):

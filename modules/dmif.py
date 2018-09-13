@@ -39,7 +39,7 @@ except ImportError:
 
 def dmif(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score,
          grid_partners, first_frame, last_frame, water_name, metal_names, directory, debugging, get_partners):
-    logger = setup_logger('_'.join(['trajectory', str(counter + 1)]), directory, debugging)
+    logger = setup_logger('_'.join(['dmif_trajectory', str(counter + 1)]), directory, debugging)
     logger.info('Started analysis of trajectory {}.'.format(counter + 1))
     check_progress, final, past_frames, future_frames = update_progress_dmif_parameters(
         counter, length_trajectory, number_processes, number_trajectories)
@@ -231,7 +231,9 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     grid_score['hi_norm'][inds] += hi
                     # no charged amino acid within hydrogen bond distance
                     if ni < 0.65 > pi:
-                        grid_score['hi'][inds] += hi
+                        # no hydrogen bonds
+                        if ha + hd == 0:
+                            grid_score['hi'][inds] += hi
                 # aromatic interactions
                 for ai_ind in ai_list:
                     ai_i = ai_positions[ai_ind]

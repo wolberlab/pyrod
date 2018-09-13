@@ -15,8 +15,6 @@ import time
 # pyrod modules
 try:
     from pyrod.modules.dmif import dmif
-    from pyrod.modules.lookup import logo, __version__, help_description, feature_names
-    from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
     from pyrod.modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
         feature_parameters, pharmacophore_parameters, library_parameters, dmif_excess_parameters
     from pyrod.modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing, generate_dmif_excess
@@ -24,10 +22,10 @@ try:
     from pyrod.modules.helper_update import update_user, time_to_text
     from pyrod.modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger
+    from pyrod.modules.lookup import logo, __version__, help_description, feature_names
+    from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
 except ImportError:
     from modules.dmif import dmif
-    from modules.lookup import logo, __version__, help_description, feature_names
-    from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
     from modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
         feature_parameters, pharmacophore_parameters, library_parameters, dmif_excess_parameters
     from modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing, generate_dmif_excess
@@ -35,6 +33,8 @@ except ImportError:
     from modules.helper_update import update_user, time_to_text
     from modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger
+    from modules.lookup import logo, __version__, help_description, feature_names
+    from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
 
 
 if __name__ == '__main__':
@@ -61,6 +61,7 @@ if __name__ == '__main__':
         update_user('Writing test grid to {}/test.'.format(directory), logger)
     # generating dmifs
     if config.has_section('dmif parameters'):
+        update_user('Starting dmif analysis.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('dmif parameters')]))
         center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length, water_name, \
             metal_names, map_formats, mp, get_partners = dmif_parameters(config)

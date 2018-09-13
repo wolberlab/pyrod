@@ -1,6 +1,8 @@
 * v0.7.1
+ - improved MD helper files
  - added dmif excess analysis to compare dmifs
  - changed hi_hb to hi_norm, allows better comparison of hydrophobicity
+ - changed hi, only calculated if not hydrogen bonded and not close to charged center
  - corrected error in ai partner calculation
  - minor changes
 * v0.7.0
