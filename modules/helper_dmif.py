@@ -16,13 +16,15 @@ import numpy.lib.recfunctions as rfn
 
 # pyrod modules
 try:
-    from pyrod.modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
-        grid_score_dict, grid_list_dict, feature_names
+    from pyrod.modules.lookup import valid_resnames, ha_sel_dict, hd_sel_dict, hi_sel_dict, ni_sel_dict, pi_sel_dict, \
+        ai_sel_dict, grid_score_dict, grid_list_dict, feature_names, standard_resnames_dict, standard_atomnames_dict
     from pyrod.modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
+    from pyrod.modules.helper_update import update_user
 except ImportError:
-    from modules.lookup import protein_resnames, hb_types, hi_sel_dict, pi_sel_dict, ni_sel_dict, ai_sel_dict, \
-        grid_score_dict, grid_list_dict, feature_names
+    from modules.lookup import valid_resnames, ha_sel_dict, hd_sel_dict, hi_sel_dict, ni_sel_dict, pi_sel_dict, \
+        ai_sel_dict, grid_score_dict, grid_list_dict, feature_names, standard_resnames_dict, standard_atomnames_dict
     from modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
+    from modules.helper_update import update_user
 
 
 def grid_generator(center, edge_lengths, space):
@@ -71,142 +73,196 @@ def grid_parameters(positions):
     return [x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum, space]
 
 
-def select_protein(topology):
-    """ This function returns all protein atoms from a topology. """
-    selection = ''
-    for resname in protein_resnames:
-        if len(selection) == 0:
+def main_selection(topology):
+    """ This function returns all atoms considered for interactions from a topology. """
+    # renumber resids and standardize resnames and atomnames for protein
+    counter = -1
+    for atom in topology:
+        # standardize resnames
+        for alternative_names in standard_resnames_dict.keys():
+            if atom['resname'] in alternative_names:
+                atom['resname'] = standard_resnames_dict[alternative_names]
+        # standardize backbone atomnames
+        for alternative_names in standard_atomnames_dict['backbone']:
+            if atom['name'] in alternative_names:
+                atom['name'] = standard_atomnames_dict['backbone'][alternative_names]
+        # standardize sidechain atomnames
+        if atom['resname'] in standard_atomnames_dict.keys():
+            for alternative_names in standard_atomnames_dict[atom['resname']]:
+                if atom['name'] in alternative_names:
+                    atom['name'] = standard_atomnames_dict[atom['resname']][alternative_names]
+        # renumber resids for protein
+        if atom['resname'] in valid_resnames:
+            if atom['name'] == 'N':
+                counter += 1
+        atom['resid'] = counter
+    selection = np.empty((0, 0))
+    for resname in valid_resnames:
+        if selection.size == 0:
             selection = topology[(topology['resname'] == resname)]
         else:
             selection = np.concatenate((selection, topology[(topology['resname'] == resname)]), axis=0)
-    if len(selection) > 1:
+    if selection.size > 1:
         selection.sort(order='atomid')
     return selection
 
 
-def select_hb_atoms(protein_atoms):
-    """ This function returns all atoms with hydrogen bond capacity from a protein. """
-    selection = ''
-    for hb_type in hb_types:
-        for resname in protein_resnames:
-            if len(selection) == 0:
-                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['type'] == hb_type)]
+def hd_selection(main_atoms):
+    """ This function returns all hydrogen bond donor atomids, their element types and the hydrogen atom ids for each
+    donor from the main selection. """
+    atomids = []
+    types = []
+    hydrogen_atomid_lists = []
+    for atom in main_atoms:
+        name = atom['name']
+        resid = atom['resid']
+        resname = atom['resname']
+        if name in hd_sel_dict[resname].keys():
+            hydrogen_atomids = []
+            for hydrogen_name in hd_sel_dict[resname][name]:
+                hydrogen_atomids += list(main_atoms[(main_atoms['resid'] == resid) &
+                                                    (main_atoms['name'] == hydrogen_name)]['atomid'])
+            if len(hydrogen_atomids) > 0:
+                atomids.append(atom['atomid'])
+                types.append(atom['type'])
+                hydrogen_atomid_lists += [hydrogen_atomids]
+    return atomids, types, hydrogen_atomid_lists
+
+
+def ha_selection(main_atoms):
+    """ This function returns all hydrogen bond acceptor atomids from the main selection. """
+    atomids = []
+    types = []
+    for atom in main_atoms:
+        ha = False
+        name = atom['name']
+        resid = atom['resid']
+        resname = atom['resname']
+        if name in ha_sel_dict[resname]:
+            if resname != 'HIS':
+                ha = True
             else:
-                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                     (protein_atoms['type'] == hb_type)]), axis=0)
-    if len(selection) > 1:
-        selection.sort(order='atomid')
-    return selection
-
-
-def select_hi_atoms(protein_atoms):
-    """ This function returns all hydrophobic atoms from a protein. """
-    selection = ''
-    for resname in hi_sel_dict.keys():
-        for name in hi_sel_dict[resname]:
-            if len(selection) == 0:
-                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
-            else:
-                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                     (protein_atoms['name'] == name)]), axis=0)
-    cys_sel = protein_atoms[(protein_atoms['resname'] == 'CYS') & ((protein_atoms['name'] == 'CB') |
-                                                                   (protein_atoms['name'] == 'SG'))]
-    for cys_atom in cys_sel:
-        if len(protein_atoms[((protein_atoms['resid'] == cys_atom['resid']) & (protein_atoms['name'] == 'HG'))]) == 0:
-            if len(selection) == 0:
-                selection = cys_atom
-            else:
-                selection = np.concatenate((selection, np.array([cys_atom])), axis=0)
-    if len(selection) > 1:
-        selection.sort(order='atomid')
-    return selection
-
-
-def select_pi_atoms(protein_atoms):
-    """ This function returns all negatively charged atoms from a protein. """
-    selection = ''
-    for resname in pi_sel_dict.keys():
-        for name in pi_sel_dict[resname]:
-            if len(selection) == 0:
-                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
-            else:
-                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                     (protein_atoms['name'] == name)]), axis=0)
-    # need to check protonation state
-    if len(selection) > 1:
-        selection.sort(order='atomid')
-    return selection
-
-
-def select_ni_atoms(protein_atoms):
-    """ This function returns all positively charged atoms from a protein. """
-    selection = ''
-    for resname in ni_sel_dict.keys():
-        for name in ni_sel_dict[resname]:
-            if len(selection) == 0:
-                selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
-                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                     (protein_atoms['name'] == name)]), axis=0)
-            else:
-                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                     (protein_atoms['name'] == name)]), axis=0)
-                selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                     (protein_atoms['name'] == name)]), axis=0)
-    # only double protonated HIS
-    his_sel = protein_atoms[((protein_atoms['resname'] == 'HIS') | (protein_atoms['resname'] == 'HSD') |
-                             (protein_atoms['resname'] == 'HSE') | (protein_atoms['resname'] == 'HSP')) &
-                            ((protein_atoms['name'] == 'ND1') | (protein_atoms['name'] == 'NE2'))]
-    for his_atom in his_sel:
-        if len(protein_atoms[(protein_atoms['resid'] == his_atom['resid']) & ((protein_atoms['name'] == 'HD1') |
-                                                                  (protein_atoms['name'] == 'HE2'))]) == 2:
-            if len(selection) == 0:
-                selection = his_atom
-            else:
-                selection = np.concatenate((selection, np.array([his_atom])), axis=0)
-    if len(selection) > 1:
-        selection.sort(order='atomid')
-    return selection
-
-
-def select_ai_atoms(protein_atoms):
-    """ This function returns atoms for defining aromatic centers from a topology. """
-    selection = ''
-    for resname in ai_sel_dict.keys():
-        for ai_group in ai_sel_dict[resname]:
-            for name in ai_group:
-                if len(selection) == 0:
-                    selection = protein_atoms[(protein_atoms['resname'] == resname) & (protein_atoms['name'] == name)]
+                if name in ['ND1', 'NE2']:
+                    if len(main_atoms[(main_atoms['resid'] == resid) &
+                                      (main_atoms['name'] == hd_sel_dict[resname][name])]) == 0:
+                        ha = True
                 else:
-                    selection = np.concatenate((selection, protein_atoms[(protein_atoms['resname'] == resname) &
-                                                                         (protein_atoms['name'] == name)]), axis=0)
-    # only single protonated HIS
-    his_sel = protein_atoms[((protein_atoms['resname'] == 'HIS') | (protein_atoms['resname'] == 'HSD') |
-                             (protein_atoms['resname'] == 'HSE') | (protein_atoms['resname'] == 'HSP')) &
-                            ((protein_atoms['name'] == 'CG') | (protein_atoms['name'] == 'CD2') |
-                             (protein_atoms['name'] == 'CE1'))]
-    for his_atom in his_sel:
-        if len(protein_atoms[(protein_atoms['resid'] == his_atom['resid']) &
-               ((protein_atoms['name'] == 'HD1') | (protein_atoms['name'] == 'HE2'))]) == 1:
-            if len(selection) == 0:
-                selection = his_atom
-            else:
-                selection = np.concatenate((selection, np.array([his_atom])), axis=0)
-    if len(selection) > 1:
-        selection.sort(order='atomid')
-    return selection
+                    ha = True
+        if ha:
+            atomids.append(atom['atomid'])
+            types.append(atom['type'])
+    return atomids, types
 
 
-def select_metal_atoms(topology, metal_names):
-    """ This function returns metal atoms from a topology. """
-    selection = ''
+def hi_selection(main_atoms):
+    """ This function returns all hydrophobic atomids from the main selection. """
+    atomids = []
+    for atom in main_atoms:
+        hi = False
+        name = atom['name']
+        resid = atom['resid']
+        resname = atom['resname']
+        if resname in hi_sel_dict.keys():
+            if name in hi_sel_dict[resname]:
+                if resname != 'CYS':
+                    hi = True
+                else:
+                    if len(main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == 'HG')]) == 1:
+                        hi = True
+        if hi:
+            atomids.append(atom['atomid'])
+    return atomids
+
+
+def ni_selection(main_atoms):
+    """ This function returns all atomids from the main selection involved in a negative charge. """
+    atomids = []
+    for resid in set(main_atoms['resid']):
+        residue_atoms = main_atoms[(main_atoms['resid']) == resid]
+        resname = residue_atoms['resname'][0]
+        if resname in ni_sel_dict.keys():
+            for group_counter, group in enumerate(ni_sel_dict[resname]):
+                charged = True
+                hydrogen_counter = 0
+                for hydrogen_name in group[1]:
+                    if len(main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == hydrogen_name)]) > 0:
+                        hydrogen_counter += 1
+                if hydrogen_counter == len(group[1]):
+                    charged = False
+                if charged:
+                    indices_tmp = []
+                    for name in ni_sel_dict[resname][group_counter][0]:
+                        index = main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == name)]['atomid']
+                        if index.size == 1:
+                            indices_tmp.append(index[0])
+                    if len(indices_tmp) == len(ni_sel_dict[resname][group_counter][0]):
+                        atomids += indices_tmp
+                        if len(ni_sel_dict[resname][group_counter][0]) == 1:
+                            atomids += indices_tmp
+    return atomids
+
+
+def pi_selection(main_atoms):
+    """ This function returns all atomids from the main selection involved in a positive charge. """
+    atomids = []
+    for resid in set(main_atoms['resid']):
+        residue_atoms = main_atoms[(main_atoms['resid']) == resid]
+        resname = residue_atoms['resname'][0]
+        if resname in pi_sel_dict.keys():
+            for group_counter, group in enumerate(pi_sel_dict[resname]):
+                charged = False
+                hydrogen_counter = 0
+                for hydrogen_name in group[1]:
+                    if len(main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == hydrogen_name)]) > 0:
+                        hydrogen_counter += 1
+                if hydrogen_counter == len(group[1]):
+                    charged = True
+                if charged:
+                    indices_tmp = []
+                    for name in pi_sel_dict[resname][group_counter][0]:
+                        index = main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == name)]['atomid']
+                        if index.size == 1:
+                            indices_tmp.append(index[0])
+                    if len(indices_tmp) == len(pi_sel_dict[resname][group_counter][0]):
+                        atomids += indices_tmp
+                        if len(pi_sel_dict[resname][group_counter][0]) == 1:
+                            atomids += indices_tmp
+    return atomids
+
+
+def ai_selection(main_atoms):
+    """ This function returns atomids for defining aromatic centers from the main selection. """
+    atomids = []
+    for resid in set(main_atoms['resid']):
+        residue_atoms = main_atoms[(main_atoms['resid']) == resid]
+        resname = residue_atoms['resname'][0]
+        if resname in ai_sel_dict.keys():
+            for group_counter, group in enumerate(ai_sel_dict[resname]):
+                charged = False
+                hydrogen_counter = 0
+                for hydrogen_name in group[1]:
+                    if len(main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == hydrogen_name)]) > 0:
+                        hydrogen_counter += 1
+                if len(group[1]) > 0:
+                    if hydrogen_counter == len(group[1]):
+                        charged = True
+                if not charged:
+                    indices_tmp = []
+                    for name in ai_sel_dict[resname][group_counter][0]:
+                        index = main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == name)]['atomid']
+                        if index.size == 1:
+                            indices_tmp.append(index[0])
+                    if len(indices_tmp) == len(ai_sel_dict[resname][group_counter][0]):
+                        atomids += indices_tmp
+    return atomids
+
+
+def metal_selection(topology, metal_names):
+    """ This function returns atomids of metal atoms from a topology. """
+    atomids = []
     for metal_name in metal_names:
-        if len(selection) == 0:
-            selection = topology[topology['resname'] == metal_name]
-        else:
-            selection = np.concatenate((selection, topology[topology['resname'] == metal_name]), axis=0)
-    if len(selection) > 1:
-        selection.sort(order='atomid')
-    return selection
+        atomids += list(topology[topology['name'] == metal_name]['atomid'])
+    return atomids
 
 
 def position_angle_test(position_to_test, center_position, positions, cutoff):

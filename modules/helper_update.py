@@ -57,8 +57,8 @@ def update_progress(progress, progress_info, eta, final=True):
             return
     else:
         status = '  ETA {:8}'.format(time_to_text(eta))
-    text = '\r' + progress_info + ': [{}] {:>5.1f}%{}'.format('=' * block + ' ' * (bar_length - block), progress * 100,
-                                                              status)
+    text = '\r{}: [{}] {:>5.1f}%{}'.format(progress_info, '=' * block + ' ' * (bar_length - block), progress * 100,
+                                           status)
     sys.stdout.write(text)
     sys.stdout.flush()
     return

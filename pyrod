@@ -63,12 +63,12 @@ if __name__ == '__main__':
     if config.has_section('dmif parameters'):
         update_user('Starting dmif analysis.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('dmif parameters')]))
-        center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length, water_name, \
-            metal_names, map_formats, mp, get_partners = dmif_parameters(config)
+        center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length, \
+        metal_names, map_formats, mp, get_partners = dmif_parameters(config)
         update_user('Initializing grid.', logger)
         grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths, space))
         args = [(topology, trajectory, counter, length, mp, traj_number, grid_score, grid_partners, first_frame,
-                 last_frame, water_name, metal_names, directory, debugging, get_partners) for counter, trajectory in
+                 last_frame, metal_names, directory, debugging, get_partners) for counter, trajectory in
                 enumerate(trajectories)]
         if traj_number > 1:
             update_user('Analyzing {} trajectories.'.format(traj_number), logger)

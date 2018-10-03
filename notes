@@ -1,3 +1,5 @@
+u = mda.Universe('/mdspace/pyrod/examples/1ke7/charmm-gui/openmm/1.gro', '/mdspace/pyrod/examples/1ke7/charmm-gui/openmm/1.dcd')
+
 hi features:
  - hydrogen bonded water molecules will have increased hi because of their high occupancy, compared to free water
    molecules --> has some advantages (prioritizes areas with high water occupancies), some disadvantages (stable waters

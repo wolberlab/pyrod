@@ -46,7 +46,6 @@ def dmif_parameters(config):
             length = len(mda.Universe(trajectories[0]).trajectory) - first_frame
     else:
         length = last_frame - first_frame
-    water_name = config.get('dmif parameters', 'water name')
     metal_names = [x.strip() for x in config.get('dmif parameters', 'metal names').split(',')]
     map_formats = []
     if len(config.get('dmif parameters', 'map formats')) > 0:
@@ -61,7 +60,7 @@ def dmif_parameters(config):
         if config.get('dmif parameters', 'dmifs only') == 'true':
             get_partners = False
     return [center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length,
-            water_name, metal_names, map_formats, mp, get_partners]
+            metal_names, map_formats, mp, get_partners]
 
 
 def exclusion_volume_parameters(config):
