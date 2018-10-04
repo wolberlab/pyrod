@@ -8,13 +8,14 @@ dMIFs and pharmacophores.
 import argparse
 import configparser
 import multiprocessing
+import numpy as np
 import os
 import pickle
 import time
 
 # pyrod modules
 try:
-    from pyrod.modules.dmif import dmif
+    from pyrod.modules.dmif import dmif_generator
     from pyrod.modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
         feature_parameters, pharmacophore_parameters, library_parameters, dmif_excess_parameters
     from pyrod.modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing, generate_dmif_excess
@@ -22,10 +23,10 @@ try:
     from pyrod.modules.helper_update import update_user, time_to_text
     from pyrod.modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger
-    from pyrod.modules.lookup import logo, __version__, help_description, feature_names
+    from pyrod.modules.lookup import logo, __version__, grid_list_dict, help_description, feature_names
     from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
 except ImportError:
-    from modules.dmif import dmif
+    from modules.dmif import dmif_generator
     from modules.helper_config import test_grid_parameters, dmif_parameters, exclusion_volume_parameters, \
         feature_parameters, pharmacophore_parameters, library_parameters, dmif_excess_parameters
     from modules.helper_dmif import grid_generator, dmif_data_structure, dmif_processing, generate_dmif_excess
@@ -33,7 +34,7 @@ except ImportError:
     from modules.helper_update import update_user, time_to_text
     from modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger
-    from modules.lookup import logo, __version__, help_description, feature_names
+    from modules.lookup import logo, __version__, grid_list_dict, help_description, feature_names
     from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
 
 
@@ -75,15 +76,17 @@ if __name__ == '__main__':
         else:
             update_user('Analyzing 1 trajectory.', logger)
         p = multiprocessing.Pool(processes=mp)
-        results = p.starmap(dmif, args, chunksize=1)
+        results = p.starmap(dmif_generator, args, chunksize=1)
         p.close()
         p.join()
         update_user('Processing results.', logger)
         dmif, partners = dmif_processing(results, traj_number, length)
-        del results
+        results = None
         pickle_writer(dmif, 'dmif', '/'.join([directory, 'data']), logger)
         if get_partners:
-            pickle_writer(partners, 'partners', '/'.join([directory, 'data']), logger)
+            for key in grid_list_dict.keys():
+                pickle_writer(partners[key].tolist(), key, '/'.join([directory, 'data']), logger)
+        partners = None
         update_user('Writing maps to {}/dmifs.'.format(directory), logger)
         for map_format in map_formats:
             for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
@@ -92,9 +95,9 @@ if __name__ == '__main__':
     # generating exclusion volumes
     if config.has_section('exclusion volume parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('exclusion volume parameters')]))
-        if config.has_option('exclusion volume parameters', 'dmif'):
-            update_user('Loading dmif from {}.'.format(config.get('exclusion volume parameters', 'dmif')), logger)
-            dmif = pickle.load(open(config.get('exclusion volume parameters', 'dmif'), 'rb'))
+        if 'dmif' not in locals():
+            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.p'), logger)
+            dmif = pickle.load(directory + '/data/dmif.p')
         ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius = exclusion_volume_parameters(config)
         evs = exclusion_volume_generator(dmif, directory, debugging, shape_min_cutoff, shape_max_cutoff, shape_radius,
                                          ev_radius, ev_space)
@@ -102,15 +105,14 @@ if __name__ == '__main__':
     # generating features
     if config.has_section('feature parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('feature parameters')]))
-        if config.has_option('feature parameters', 'dmif'):
-            update_user('Loading dmif from {}.'.format(config.get('feature parameters', 'dmif')), logger)
-            dmif = pickle.load(open(config.get('feature parameters', 'dmif'), 'rb'))
-        if config.has_option('feature parameters', 'partners'):
-            update_user('Loading partner from {}.'.format(config.get('feature parameters', 'partners')), logger)
-            partners = pickle.load(open(config.get('feature parameters', 'partners'), 'rb'))
+        if 'dmif' not in locals():
+            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.p'), logger)
+            dmif = pickle.load(directory + '/data/dmif.p')
         features_per_feature_type, mp = feature_parameters(config)
-        args = [(dmif, partners, feature_name, features_per_feature_type, directory, debugging) for feature_name in
-                feature_names]
+        positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
+        args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, directory, debugging)
+                for feature_name in feature_names]
+        del dmif
         update_user('Generating features.', logger)
         p = multiprocessing.Pool(processes=mp)
         results = p.starmap(features_generator, args, chunksize=1)
@@ -123,11 +125,13 @@ if __name__ == '__main__':
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('pharmacophore parameters')]))
         if config.has_option('pharmacophore parameters', 'features'):
             update_user('Loading features from {}.'.format(config.get('pharmacophore parameters', 'features')), logger)
-            features = pickle.load(open(config.get('pharmacophore parameters', 'features'), 'rb'))
+            with open(config.get('pharmacophore parameters', 'features'), 'rb') as file:
+                features = pickle.load(file)
         if config.has_option('pharmacophore parameters', 'exclusion volumes'):
             update_user('Loading exclusion volumes from {}.'.format(config.get('pharmacophore parameters',
                                                                                'exclusion volumes')), logger)
-            evs = pickle.load(open(config.get('pharmacophore parameters', 'exclusion volumes'), 'rb'))
+            with open(config.get('pharmacophore parameters', 'exclusion volumes'), 'rb') as file:
+                evs = pickle.load(file)
         pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number, \
             ais_number = pharmacophore_parameters(config)
         pharmacophore_directory = '/'.join([directory, 'pharmacophores'])

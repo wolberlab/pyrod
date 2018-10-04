@@ -36,8 +36,8 @@ except ImportError:
     from modules.helper_write import setup_logger
 
 
-def dmif(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score,
-         grid_partners, first_frame, last_frame, metal_names, directory, debugging, get_partners):
+def dmif_generator(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score,
+                   grid_partners, first_frame, last_frame, metal_names, directory, debugging, get_partners):
     logger = setup_logger('_'.join(['dmif_trajectory', str(counter + 1)]), directory, debugging)
     logger.info('Started analysis of trajectory {}.'.format(counter + 1))
     check_progress, final, past_frames, future_frames = update_progress_dmif_parameters(
@@ -146,7 +146,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     for hd_hydrogen_coor in hd_hydrogen_coors:
                         if angle(o_coor, hd_hydrogen_coor, hd_coor) >= hb_angl_dict[hd_type]:
                             ha += 1
-                            ha_i.append(hd_coor)
+                            ha_i.append([float(x) for x in hd_coor])
             # hydrogen bond donor feature
             for ha_ind in ha_list:
                 ha_coor, ha_type = ha_positions[ha_ind], ha_types[ha_ind]
@@ -154,7 +154,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                     for h_coor in [h1_coor, h2_coor]:
                         if angle(ha_coor, h_coor, o_coor) >= hb_angl_dict[ha_type]:
                             hd += 1
-                            hd_i.append(ha_coor)
+                            hd_i.append([float(x) for x in ha_coor])
             # metals
             for metal_ind in metal_list:
                 metal_position = metal_positions[metal_ind]
@@ -177,13 +177,13 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                         ha_inds += inds
                         if get_partners:
                             for ind in inds:
-                                grid_partners[ind][grid_list_dict['ha_i']] += ha_i
+                                grid_partners[ind][grid_list_dict['ha']] += ha_i
                     # double
                     elif ha == 2:
                         ha2_inds += inds
                         if get_partners:
                             for ind in inds:
-                                grid_partners[ind][grid_list_dict['ha2_i']] += ha_i
+                                grid_partners[ind][grid_list_dict['ha2']] += ha_i
                 # single hydrogen bond donors
                 elif hd == 1:
                     # single donor
@@ -191,20 +191,20 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                         hd_inds += inds
                         if get_partners:
                             for ind in inds:
-                                grid_partners[ind][grid_list_dict['hd_i']] += hd_i
+                                grid_partners[ind][grid_list_dict['hd']] += hd_i
                     # mixed donor acceptor
                     elif ha == 1:
                         hda_inds += inds
                         if get_partners:
                             for ind in inds:
-                                grid_partners[ind][grid_list_dict['hda_id']] += hd_i
-                                grid_partners[ind][grid_list_dict['hda_ia']] += ha_i
+                                grid_partners[ind][grid_list_dict['hda']][0] += hd_i
+                                grid_partners[ind][grid_list_dict['hda']][1] += ha_i
                 else:
                     # double hydrogen bond donor
                     hd2_inds += inds
                     if get_partners:
                         for ind in inds:
-                            grid_partners[ind][grid_list_dict['hd2_i']] += hd_i
+                            grid_partners[ind][grid_list_dict['hd2']] += hd_i
                 # ionizable interactions
                 # sum up negative ionizable
                 for pi_ind in pi_list:
@@ -255,7 +255,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                                     if 0.001 <= offset <= 2.0:
                                         grid_score['ai'][ind] += pi_stacking_distance_score_dict[round(ai_distance, 1)]
                                         if get_partners:
-                                            grid_partners[ind][grid_list_dict['ai_i']] += \
+                                            grid_partners[ind][grid_list_dict['ai']] += \
                                                 pi_stacking_partner_position(grid_point, ai_n, ai_distance, alpha)
                                 # t-stacking
                                 else:
@@ -263,9 +263,9 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                                     if 0.001 <= offset <= 0.5:
                                         grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
                                         if get_partners:
-                                            grid_partners[ind][grid_list_dict['ai_i']] += \
-                                                t_stacking_partner_position(ai_i, grid_point, ai_n, offset,
-                                                                            ai_distance, alpha, True)
+                                            grid_partners[ind][grid_list_dict['ai']] += \
+                                                t_stacking_partner_position(ai_i, grid_point, ai_n, offset, ai_distance,
+                                                                            alpha, True)
                             # t-stacking with hydrogen of protein aromatic center
                             else:
                                 if ai_distance >= 4.6:
@@ -276,7 +276,7 @@ def dmif(topology, trajectory, counter, length_trajectory, number_processes, num
                                         ai_n2, alpha = ai_geometry(ai_vector, ai_n2)
                                         grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
                                         if get_partners:
-                                            grid_partners[ind][grid_list_dict['ai_i']] += \
+                                            grid_partners[ind][grid_list_dict['ai']] += \
                                                 t_stacking_partner_position(ai_i, grid_point, ai_n2, offset,
                                                                             ai_distance, alpha)
         # adding scores to grid

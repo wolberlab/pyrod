@@ -7,6 +7,7 @@ This module contains functions to generate features and pharmacophores.
 import copy
 from itertools import combinations
 import os
+import pickle
 import sys
 import time
 import xml.etree.ElementTree as et
@@ -21,11 +22,13 @@ try:
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
     from pyrod.modules.helper_update import update_progress, update_user, bytes_to_text
     from pyrod.modules.helper_write import file_path, pml_feature_volume, setup_logger
+    from pyrod.modules.lookup import grid_list_dict
 except ImportError:
     from modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
     from modules.helper_update import update_progress, update_user, bytes_to_text
     from modules.helper_write import file_path, pml_feature_volume, setup_logger
+    from modules.lookup import grid_list_dict
 
 
 def exclusion_volume_generator(dmif, directory, debugging, shape_minimum_cutoff=1, shape_maximum_cutoff=10,
@@ -57,18 +60,21 @@ def exclusion_volume_generator(dmif, directory, debugging, shape_minimum_cutoff=
     return exclusion_volumes
 
 
-def features_generator(dmif, partners, feature_name, features_per_feature_type, directory, debugging):
+def features_generator(positions, feature_scores, feature_name, features_per_feature_type, directory, debugging):
     """ This function generates features with variable tolerance based on a global maximum search algorithm. """
     logger = setup_logger('_'.join(['features', feature_name]), directory, debugging)
     update_user('Starting {} feature generation.'.format(feature_name), logger)
+    if feature_name in grid_list_dict.keys():
+        with open(directory + '/data/' + feature_name + '.p', 'rb') as file:
+            partners = pickle.load(file)
+    else:
+        partners = []
     local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0, 'pi': 0, 'ni': 0,
                            'ai': 1.5}
     local_maximum_radius = local_maximum_radii[feature_name]
     score_minimum = 1
-    positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
     tree = cKDTree(positions)
     generated_features = []
-    feature_scores = np.array(dmif[feature_name])
     not_used = range(len(feature_scores))
     used = []
     while feature_scores[not_used].max() >= score_minimum:

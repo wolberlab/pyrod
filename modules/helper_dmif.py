@@ -58,7 +58,7 @@ def dmif_data_structure(grid):
     grid_partners = []
     for position in grid:
         grid_score.append(position + [0] * (len(grid_score_dict.keys()) - 3))
-        grid_partners.append([[] for _ in range(len(grid_list_dict.keys()))])
+        grid_partners.append([[] if _ != 'hda' else [[], []] for _ in grid_list_dict.keys()])
     grid_score = np.array([tuple(x) for x in grid_score], dtype=[(x[0], 'float64') for x in sorted([[x,
                           grid_score_dict[x]] for x in grid_score_dict.keys()], key=operator.itemgetter(1))])
     return [grid_score, grid_partners]
@@ -318,7 +318,7 @@ def pi_stacking_partner_position(B, AC, c, alpha):
     """ This function returns the position of an interacting aromatic center for pi-stacking. """
     b = norm(AC)
     b_new = adjacent(alpha, c)
-    return [[x - ((y / b) * b_new) for x, y in zip(B, AC)]]
+    return [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
 
 
 def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
@@ -330,11 +330,11 @@ def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
         BC = vector(B, C)
         vectors = [BC]
         vectors += [rotate_vector(BC, AC, x)for x in [30, 60, 90, 120, 150]]
-        positions = [[x + ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
-        positions += [[x - ((y / a) * 3.5) for x, y in zip(B, BC)] for BC in vectors]
+        positions = [[float(x + ((y / a) * 3.5)) for x, y in zip(B, BC)] for BC in vectors]
+        positions += [[float(x - ((y / a) * 3.5)) for x, y in zip(B, BC)] for BC in vectors]
         return positions
     else:
-        return [[x - ((y / b) * b_new) for x, y in zip(B, AC)]]
+        return [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
 
 
 def dmif_processing(results, traj_number, length):
@@ -369,8 +369,10 @@ def grid_partners_to_array(grid_partners):
 
 
 def generate_dmif_excess(dmif1_path, dmif2_path):
-    dmif1 = pickle.load(open(dmif1_path, 'rb'))
-    dmif2 = pickle.load(open(dmif2_path, 'rb'))
+    with open(dmif1_path, 'rb') as file:
+        dmif1 = pickle.load(file)
+    with open(dmif2_path, 'rb') as file:
+        dmif2 = pickle.load(file)
     if np.array([dmif1['x'], dmif1['y'], dmif1['z']]) == np.array([dmif2['x'], dmif2['y'], dmif2['z']]):
         dmif1_excess = copy.deepcopy(dmif1)
         dmif2_excess = copy.deepcopy(dmif2)

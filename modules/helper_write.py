@@ -347,7 +347,8 @@ def pickle_writer(data, name, directory, logger):
     name = '.'.join([name, 'p'])
     update_user('Writing {} to {}.'.format(name, directory), logger)
     file_path(name, directory)
-    pickle.dump(data, (open('/'.join([directory, name]), 'wb')))
+    with open('/'.join([directory, name]), 'wb') as file:
+        pickle.dump(data, file)
     return
 
 

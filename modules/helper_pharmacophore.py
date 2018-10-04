@@ -117,15 +117,15 @@ def maximal_sum_of_scores(feature_scores, indices, feature_indices):
 def generate_feature(feature_name, index, positions, partners, feature_scores, tolerance):
     feature_partners = []
     if feature_name in ['ha', 'hd', 'ha2', 'hd2', 'ai']:
-        partner, used_list = center(partners[feature_name + '_i'][index], 1.5)
+        partner, used_list = center(partners[index], 1.5)
         feature_partners.append(partner)
         if feature_name in ['ha2', 'hd2']:
-            partner2 = center([x for y, x in enumerate(partners[feature_name + '_i'][index]) if y not in used_list],
+            partner2 = center([x for y, x in enumerate(partners[index]) if y not in used_list],
                               1.5)[0]
             feature_partners.append(partner2)
     elif feature_name == 'hda':
-        feature_partners.append(center(partners[feature_name + '_id'][index], 1.5)[0])
-        feature_partners.append(center(partners[feature_name + '_ia'][index], 1.5)[0])
+        feature_partners.append(center(partners[index][0], 1.5)[0])
+        feature_partners.append(center(partners[index][1], 1.5)[0])
     return [feature_name, positions[index], tolerance, feature_partners, 0, round(feature_scores[index], 1)]
 
 
