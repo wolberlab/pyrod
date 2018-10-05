@@ -16,13 +16,15 @@ import numpy.lib.recfunctions as rfn
 
 # pyrod modules
 try:
-    from pyrod.modules.lookup import valid_resnames, ha_sel_dict, hd_sel_dict, hi_sel_dict, ni_sel_dict, pi_sel_dict, \
-        ai_sel_dict, grid_score_dict, grid_list_dict, feature_names, standard_resnames_dict, standard_atomnames_dict
+    from pyrod.modules.lookup import protein_resnames, ha_sel_dict, hd_sel_dict, hi_sel_dict, ni_sel_dict, \
+        pi_sel_dict, ai_sel_dict, grid_score_dict, grid_list_dict, feature_names, standard_resnames_dict, \
+        standard_atomnames_dict, valid_resnames
     from pyrod.modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
     from pyrod.modules.helper_update import update_user
 except ImportError:
-    from modules.lookup import valid_resnames, ha_sel_dict, hd_sel_dict, hi_sel_dict, ni_sel_dict, pi_sel_dict, \
-        ai_sel_dict, grid_score_dict, grid_list_dict, feature_names, standard_resnames_dict, standard_atomnames_dict
+    from modules.lookup import protein_resnames, ha_sel_dict, hd_sel_dict, hi_sel_dict, ni_sel_dict, pi_sel_dict, \
+        ai_sel_dict, grid_score_dict, grid_list_dict, feature_names, standard_resnames_dict, standard_atomnames_dict, \
+        valid_resnames
     from modules.helper_math import angle, maximal_angle, norm, adjacent, vector, vector_angle, rotate_vector
     from modules.helper_update import update_user
 
@@ -82,17 +84,13 @@ def main_selection(topology):
         for alternative_names in standard_resnames_dict.keys():
             if atom['resname'] in alternative_names:
                 atom['resname'] = standard_resnames_dict[alternative_names]
-        # standardize backbone atomnames
-        for alternative_names in standard_atomnames_dict['backbone']:
-            if atom['name'] in alternative_names:
-                atom['name'] = standard_atomnames_dict['backbone'][alternative_names]
-        # standardize sidechain atomnames
+        # standardize atomnames
         if atom['resname'] in standard_atomnames_dict.keys():
             for alternative_names in standard_atomnames_dict[atom['resname']]:
                 if atom['name'] in alternative_names:
                     atom['name'] = standard_atomnames_dict[atom['resname']][alternative_names]
         # renumber resids for protein
-        if atom['resname'] in valid_resnames:
+        if atom['resname'] in protein_resnames:
             if atom['name'] == 'N':
                 counter += 1
         atom['resid'] = counter
@@ -239,20 +237,17 @@ def ai_selection(main_atoms):
         if resname in ai_sel_dict.keys():
             for group_counter, group in enumerate(ai_sel_dict[resname]):
                 charged = False
-                hydrogen_counter = 0
-                for hydrogen_name in group[1]:
-                    if len(main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == hydrogen_name)]) > 0:
-                        hydrogen_counter += 1
-                if len(group[1]) > 0:
-                    if hydrogen_counter == len(group[1]):
+                indices_tmp = []
+                if resname == 'HIS':
+                    if len(main_atoms[(main_atoms['resid'] == resid) & ((main_atoms['name'] == 'HD1') |
+                                                                        (main_atoms['name'] == 'HE2'))]) != 1:
                         charged = True
                 if not charged:
-                    indices_tmp = []
-                    for name in ai_sel_dict[resname][group_counter][0]:
+                    for name in ai_sel_dict[resname][group_counter]:
                         index = main_atoms[(main_atoms['resid'] == resid) & (main_atoms['name'] == name)]['atomid']
                         if index.size == 1:
                             indices_tmp.append(index[0])
-                    if len(indices_tmp) == len(ai_sel_dict[resname][group_counter][0]):
+                    if len(indices_tmp) == len(ai_sel_dict[resname][group_counter]):
                         atomids += indices_tmp
     return atomids
 
