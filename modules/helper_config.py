@@ -119,9 +119,6 @@ def library_parameters(config, path):
     maximal_hydrophobic_interactions = int(config.get('library parameters', 'maximal hydrophobic interactions'))
     maximal_aromatic_interactions = int(config.get('library parameters', 'maximal aromatic interactions'))
     maximal_ionizable_interactions = int(config.get('library parameters', 'maximal ionizable interactions'))
-    pyrod_pharmacophore = False
-    if config.get('library parameters', 'pyrod pharmacophore') == 'true':
-        pyrod_pharmacophore = True
     make_mandatory = False
     if config.get('library parameters', 'make optional features mandatory') == 'true':
         make_mandatory = True
@@ -131,8 +128,8 @@ def library_parameters(config, path):
         library_name = 'library'
     library_path = '/'.join([path, library_name])
     return [pharmacophore_path, minimal_features, maximal_features, maximal_hydrogen_bonds,
-            maximal_hydrophobic_interactions, maximal_aromatic_interactions,
-            maximal_ionizable_interactions,  library_path, pyrod_pharmacophore, make_mandatory]
+            maximal_hydrophobic_interactions, maximal_aromatic_interactions, maximal_ionizable_interactions,
+            library_path, make_mandatory]
 
 
 def dmif_excess_parameters(config):

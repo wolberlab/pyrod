@@ -125,7 +125,7 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
 
 def library_generator(pharmacophore_path, minimal_features, maximal_features, maximal_hydrogen_bonds,
                       maximal_hydrophobic_interactions, maximal_aromatic_interactions, maximal_ionizable_interactions,
-                      library_path, pyrod_pharmacophore, make_mandatory):
+                      library_path, make_mandatory):
     super_pharmacophore, pharmacophore_library = [], []
     essential_hb_features, essential_hi_features, essential_ai_features, essential_ii_features = [], [], [], []
     optional_hb_features, optional_hi_features, optional_ai_features, optional_ii_features = [], [], [], []
