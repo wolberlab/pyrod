@@ -194,7 +194,7 @@ def library_generator(pharmacophore_path, minimal_features, maximal_features, ma
                                                      essential_ai_features + list(ais_) +
                                                      essential_ii_features + list(iis_))
                                     if evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
-                                                              maximal_features, pyrod_pharmacophore):
+                                                              maximal_features):
                                         pharmacophore_library.append(pharmacophore)
     feature_indices = (essential_hb_features + essential_hi_features + essential_ii_features + essential_ai_features +
                        optional_hb_features + optional_hi_features + optional_ii_features + optional_ai_features)

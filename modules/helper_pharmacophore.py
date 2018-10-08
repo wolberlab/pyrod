@@ -151,10 +151,8 @@ def select_features(features, hbs_number, his_number, iis_number, ais_number):
     return hbs + his + iis + ais
 
 
-def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features, maximal_features, pyrod_pharmacophore):
-    hb_positions = []
+def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features, maximal_features):
     hi_positions = []
-    ai_positions = []
     ii_positions = []
     positions = []
     for index in pharmacophore:
@@ -166,8 +164,6 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
             position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
             if feature_name == 'H':
                 hi_positions.append(position)
-            elif feature_name == 'AR':
-                ai_positions.append(position)
             else:
                 ii_positions.append(position)
         elif feature_name in ['HBA', 'HBD']:
@@ -176,14 +172,6 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
             else:
                 position = feature.find('origin')
             position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
-            if pyrod_pharmacophore:
-                if len(feature.attrib['featureId'].split('_')) > 1:
-                    if feature.attrib['featureId'].split('_')[1] == '1':
-                        hb_positions.append(position)
-                else:
-                    hb_positions.append(position)
-            else:
-                hb_positions.append(position)
         if position is not None:
             if position not in positions:
                 positions.append(position)
@@ -197,11 +185,6 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
     for pair in product(hi_positions, ii_positions):
         if distance(*pair) < 3:
             return False
-    # different hydrogen bond types should not appear within 1.5 A if pyrod pharmacophore
-    if pyrod_pharmacophore:
-        for pair in combinations(hb_positions, 2):
-            if distance(*pair) < 1.5:
-                return False
     # different ionizable features should not appear within 3 A
     for pair in combinations(ii_positions, 2):
         if distance(*pair) < 3:
