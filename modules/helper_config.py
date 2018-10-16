@@ -27,37 +27,37 @@ def test_grid_parameters(config):
     return [center, edge_lengths, space, name]
 
 
-def dmif_parameters(config):
-    center = [float(x.strip()) for x in config.get('dmif parameters', 'center').split(',')]
-    edge_lengths = [float(x.strip()) for x in config.get('dmif parameters', 'edge lengths').split(',')]
-    space = float(config.get('dmif parameters', 'grid space'))
-    topology = config.get('dmif parameters', 'topology')
-    trajectories = [x.strip() for x in config.get('dmif parameters', 'trajectories').split(',')]
+def trajectory_analysis_parameters(config):
+    center = [float(x.strip()) for x in config.get('trajectory analysis parameters', 'center').split(',')]
+    edge_lengths = [float(x.strip()) for x in config.get('trajectory analysis parameters', 'edge lengths').split(',')]
+    space = float(config.get('trajectory analysis parameters', 'grid space'))
+    topology = config.get('trajectory analysis parameters', 'topology')
+    trajectories = [x.strip() for x in config.get('trajectory analysis parameters', 'trajectories').split(',')]
     traj_number = len(trajectories)
     first_frame = 0
-    if len(config.get('dmif parameters', 'first frame')) > 0:
-        first_frame = int(config.get('dmif parameters', 'first frame')) - 1
+    if len(config.get('trajectory analysis parameters', 'first frame')) > 0:
+        first_frame = int(config.get('trajectory analysis parameters', 'first frame')) - 1
     last_frame = None
-    if len(config.get('dmif parameters', 'last frame')) > 0:
-        last_frame = int(config.get('dmif parameters', 'last frame'))
+    if len(config.get('trajectory analysis parameters', 'last frame')) > 0:
+        last_frame = int(config.get('trajectory analysis parameters', 'last frame'))
     if last_frame is None:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             length = len(mda.Universe(trajectories[0]).trajectory) - first_frame
     else:
         length = last_frame - first_frame
-    metal_names = [x.strip() for x in config.get('dmif parameters', 'metal names').split(',')]
+    metal_names = [x.strip() for x in config.get('trajectory analysis parameters', 'metal names').split(',')]
     map_formats = []
-    if len(config.get('dmif parameters', 'map formats')) > 0:
-        map_formats = [x.strip() for x in config.get('dmif parameters', 'map formats').split(',')]
-    mp = config.get('dmif parameters', 'number of processes')
+    if len(config.get('trajectory analysis parameters', 'map formats')) > 0:
+        map_formats = [x.strip() for x in config.get('trajectory analysis parameters', 'map formats').split(',')]
+    mp = config.get('trajectory analysis parameters', 'number of processes')
     if len(mp) > 0:
         mp = int(mp)
     else:
         mp = 1
     get_partners = True
-    if config.has_option('dmif parameters', 'dmifs only'):
-        if config.get('dmif parameters', 'dmifs only') == 'true':
+    if config.has_option('trajectory analysis parameters', 'dmifs only'):
+        if config.get('trajectory analysis parameters', 'dmifs only') == 'true':
             get_partners = False
     return [center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length,
             metal_names, map_formats, mp, get_partners]

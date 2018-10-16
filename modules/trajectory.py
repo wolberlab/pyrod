@@ -17,7 +17,7 @@ try:
     from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
         pi_stacking_distance_score_dict, t_stacking_distance_score_dict, ai_pi_distance_score_dict, \
         AI_PI_ANGLE_CUTOFF
-    from pyrod.modules.helper_dmif import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
+    from pyrod.modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
         pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, grid_parameters, \
         grid_partners_to_array, ai_geometry, t_stacking_partner_position
     from pyrod.modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
@@ -27,7 +27,7 @@ try:
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
         pi_stacking_distance_score_dict, t_stacking_distance_score_dict, ai_pi_distance_score_dict, AI_PI_ANGLE_CUTOFF
-    from modules.helper_dmif import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
+    from modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
         pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, grid_parameters, \
         grid_partners_to_array, ai_geometry, t_stacking_partner_position
     from modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
@@ -36,8 +36,9 @@ except ImportError:
     from modules.helper_write import setup_logger
 
 
-def dmif_generator(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories, grid_score,
-                   grid_partners, first_frame, last_frame, metal_names, directory, debugging, get_partners):
+def trajectory_analysis(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories,
+                        grid_score, grid_partners, first_frame, last_frame, metal_names, directory, debugging,
+                        get_partners):
     logger = setup_logger('_'.join(['dmif_trajectory', str(counter + 1)]), directory, debugging)
     logger.info('Started analysis of trajectory {}.'.format(counter + 1))
     check_progress, final, past_frames, future_frames = update_progress_dmif_parameters(

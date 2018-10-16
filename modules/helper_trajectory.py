@@ -332,7 +332,7 @@ def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
         return [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
 
 
-def dmif_processing(results, traj_number, length):
+def post_processing(results, traj_number, length):
     dmif = results[0][0]
     partners = results[0][1]
     if len(results) > 1:

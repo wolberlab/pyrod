@@ -14,12 +14,12 @@ from scipy.spatial import cKDTree
 
 # pyrod modules
 try:
-    from pyrod.modules.helper_dmif import grid_parameters, grid_generator
+    from pyrod.modules.helper_trajectory import grid_parameters, grid_generator
     from pyrod.modules.helper_math import distance, standard_deviation
     from pyrod.modules.lookup import feature_names
     from pyrod.modules.helper_update import update_user
 except ImportError:
-    from modules.helper_dmif import grid_parameters, grid_generator
+    from modules.helper_trajectory import grid_parameters, grid_generator
     from modules.helper_math import distance, standard_deviation
     from modules.lookup import feature_names
     from modules.helper_update import update_user
