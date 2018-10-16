@@ -56,10 +56,21 @@ if __name__ == '__main__':
     # defining grid
     if config.has_section('test grid parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('test grid parameters')]))
-        center, edge_lengths, space, name = test_grid_parameters(config)
-        grid = grid_generator(center, edge_lengths, space)
-        pdb_writer(positions=grid, name=name, path=''.join([directory, '/test']))
-        update_user('Writing test grid to {}/test.'.format(directory), logger)
+        center, edge_lengths, name = test_grid_parameters(config)
+        # determine space resulting in less than 100000 grid points
+        space = 0.5
+        space_found = False
+        while not space_found:
+            grid = grid_generator(center, edge_lengths, space)
+            if len(grid) < 100000:
+                space_found = True
+                pdb_writer(positions=grid, name=name, path=''.join([directory, '/test']))
+                update_user('Writing test grid to {}/test.'.format(directory), logger)
+            else:
+                if space == 0.5:
+                    space += 0.5
+                else:
+                    space += 1
     # generating dmifs
     if config.has_section('dmif parameters'):
         update_user('Starting dmif analysis.', logger)
