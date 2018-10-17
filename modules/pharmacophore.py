@@ -69,8 +69,6 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
             partners = pickle.load(file)
     else:
         partners = []
-    local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0, 'pi': 0, 'ni': 0, 'ai': 0}
-    local_maximum_radius = local_maximum_radii[feature_name]
     score_minimum = 1
     tree = cKDTree(positions)
     generated_features = []
@@ -81,14 +79,10 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
         logger.debug('Feature {} maximum of remaining grid points at {}.'.format(feature_name, feature_maximum))
         indices_not_checked = np.where(abs(feature_scores - feature_maximum) < 1e-8)[0]
         indices = []
-        # check if position corresponds to local maximum
+        # check if position already part of feature
         for index_not_checked in indices_not_checked:
             if index_not_checked in not_used:
-                if abs(feature_scores[tree.query_ball_point(positions[index_not_checked], r=local_maximum_radius)].max()
-                               - feature_maximum) < 1e-8:
-                    indices.append(index_not_checked)
-                else:
-                    not_used = [x for x in not_used if x != index_not_checked]
+                indices.append(index_not_checked)
         # pass if no allowed index available
         if len(indices) == 0:
             pass
