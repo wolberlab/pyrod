@@ -69,8 +69,7 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
             partners = pickle.load(file)
     else:
         partners = []
-    local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0, 'pi': 0, 'ni': 0,
-                           'ai': 1.5}
+    local_maximum_radii = {'hd': 1.5, 'hd2': 1.5, 'ha': 1.5, 'ha2': 1.5, 'hda': 1.5, 'hi': 0, 'pi': 0, 'ni': 0, 'ai': 0}
     local_maximum_radius = local_maximum_radii[feature_name]
     score_minimum = 1
     tree = cKDTree(positions)
