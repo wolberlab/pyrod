@@ -15,18 +15,19 @@ from scipy.spatial import cKDTree
 # pyrod modules
 try:
     from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
-        pi_stacking_distance_score_dict, t_stacking_distance_score_dict, ai_pi_distance_score_dict, \
-        AI_PI_ANGLE_CUTOFF
-    from pyrod.modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
-        pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, grid_parameters, \
-        grid_partners_to_array, ai_geometry, t_stacking_partner_position
+        pi_stacking_distance_score_dict, t_stacking_distance_score_dict, cation_pi_distance_score_dict, \
+        CATION_PI_ANGLE_CUTOFF
+    from pyrod.modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, \
+        ni_selection, pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, \
+        grid_parameters, grid_partners_to_array, ai_geometry, t_stacking_partner_position
     from pyrod.modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
         cross_product
     from pyrod.modules.helper_update import update_progress_dmif_parameters, update_progress_dmif
     from pyrod.modules.helper_write import setup_logger
 except ImportError:
     from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
-        pi_stacking_distance_score_dict, t_stacking_distance_score_dict, ai_pi_distance_score_dict, AI_PI_ANGLE_CUTOFF
+        pi_stacking_distance_score_dict, t_stacking_distance_score_dict, cation_pi_distance_score_dict, \
+        CATION_PI_ANGLE_CUTOFF
     from modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
         pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, grid_parameters, \
         grid_partners_to_array, ai_geometry, t_stacking_partner_position
@@ -206,11 +207,21 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                     if get_partners:
                         for ind in inds:
                             grid_partners[ind][grid_list_dict['hd2']] += hd_i
-                # ionizable interactions
-                # sum up negative ionizable
+                # ionizable interactions and cation-pi interactions
+                # negative ionizable and cation-pi interactions
                 for pi_ind in pi_list:
-                    ni += 2.6 / distance(o_coor, pi_positions[pi_ind])
-                # sum up positive ionizable
+                    pi_i = pi_positions[pi_ind]
+                    # negative ionizable interaction
+                    ni += 2.6 / distance(o_coor, pi_i)
+                    # cation-pi interaction
+                    for ind in inds:
+                        grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
+                        pi_distance = distance(grid_point, pi_i)
+                        if 3.1 <= pi_distance <= 6.0:
+                            grid_score['ai'][ind] += cation_pi_distance_score_dict[round(pi_distance, 1)]
+                            if get_partners:
+                                grid_partners[ind][grid_list_dict['ai']] += [[float(x) for x in pi_i]]
+                # positive ionizable
                 for ni_ind in ni_list:
                     pi += 2.6 / distance(o_coor, ni_positions[ni_ind])
                 # add ionizable interaction score
@@ -230,56 +241,57 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                     # no charged amino acid within 4 A
                     if ni < 0.65 > pi:
                         grid_score['hi'][inds] += hi
-                # aromatic interactions
+                # aromatic interactions grid point wise
                 for ai_ind in ai_list:
                     ai_i = ai_positions[ai_ind]
                     ai_n = ai_normals[ai_ind]
-                    # pi-cation interactions
-                    if round(distance(o_coor, ai_i), 1) >= 3.1:
-                        ai_vector_angle = vector_angle(ai_n, vector(ai_i, o_coor))
-                        if ai_vector_angle <= AI_PI_ANGLE_CUTOFF or ai_vector_angle >= (180 - AI_PI_ANGLE_CUTOFF):
-                            grid_score['pi'][inds] += ai_pi_distance_score_dict[round(distance(o_coor, ai_i), 1)]
-                    # pi- and t-stacking grid point wise
                     for ind in inds:
                         grid_point = [grid_score['x'][ind], grid_score['y'][ind], grid_score['z'][ind]]
                         ai_distance = distance(grid_point, ai_i)
-                        # check distance between grid point and aromatic center
-                        if 3.3 <= ai_distance <= 6.0:
+                        if 3.1 <= ai_distance <= 6.0:
                             ai_vector = vector(ai_i, grid_point)
                             ai_n, alpha = ai_geometry(ai_vector, ai_n)
-                            # pi- and t-stacking with pi-system of protein aromatic center
-                            if alpha < 45:
-                                offset = opposite(alpha, ai_distance)
-                                # pi-stacking
-                                if ai_distance <= 4.7:
-                                    # check offset between grid point and aromatic center
-                                    if 0.001 <= offset <= 2.0:
-                                        grid_score['ai'][ind] += pi_stacking_distance_score_dict[round(ai_distance, 1)]
-                                        if get_partners:
-                                            grid_partners[ind][grid_list_dict['ai']] += \
-                                                pi_stacking_partner_position(grid_point, ai_n, ai_distance, alpha)
-                                # t-stacking
+                            # cation-pi interactions
+                            if alpha <= CATION_PI_ANGLE_CUTOFF:
+                                grid_score['pi'][ind] += cation_pi_distance_score_dict[round(ai_distance, 1)]
+                            # pi- and t-stacking
+                            if ai_distance >= 3.3:
+                                # pi- and t-stacking with pi-system of protein aromatic center
+                                if alpha < 45:
+                                    offset = opposite(alpha, ai_distance)
+                                    # pi-stacking
+                                    if ai_distance <= 4.7:
+                                        # check offset between grid point and aromatic center
+                                        if 0.001 <= offset <= 2.0:
+                                            grid_score['ai'][ind] += pi_stacking_distance_score_dict[round(ai_distance,
+                                                                                                           1)]
+                                            if get_partners:
+                                                grid_partners[ind][grid_list_dict['ai']] += \
+                                                    pi_stacking_partner_position(grid_point, ai_n, ai_distance, alpha)
+                                    # t-stacking
+                                    else:
+                                        # check offset between grid point and aromatic center
+                                        if 0.001 <= offset <= 0.5:
+                                            grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance,
+                                                                                                          1)]
+                                            if get_partners:
+                                                grid_partners[ind][grid_list_dict['ai']] += \
+                                                    t_stacking_partner_position(ai_i, grid_point, ai_n, offset,
+                                                                                ai_distance, alpha, True)
+                                # t-stacking with hydrogen of protein aromatic center
                                 else:
-                                    # check offset between grid point and aromatic center
-                                    if 0.001 <= offset <= 0.5:
-                                        grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
-                                        if get_partners:
-                                            grid_partners[ind][grid_list_dict['ai']] += \
-                                                t_stacking_partner_position(ai_i, grid_point, ai_n, offset, ai_distance,
-                                                                            alpha, True)
-                            # t-stacking with hydrogen of protein aromatic center
-                            else:
-                                if ai_distance >= 4.6:
-                                    # check offset between grid point and aromatic center
-                                    offset = adjacent(alpha, ai_distance)
-                                    if 0.001 <= offset <= 0.5:
-                                        ai_n2 = cross_product(ai_n, cross_product(ai_n, ai_vector))
-                                        ai_n2, alpha = ai_geometry(ai_vector, ai_n2)
-                                        grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance, 1)]
-                                        if get_partners:
-                                            grid_partners[ind][grid_list_dict['ai']] += \
-                                                t_stacking_partner_position(ai_i, grid_point, ai_n2, offset,
-                                                                            ai_distance, alpha)
+                                    if ai_distance >= 4.6:
+                                        # check offset between grid point and aromatic center
+                                        offset = adjacent(alpha, ai_distance)
+                                        if 0.001 <= offset <= 0.5:
+                                            ai_n2 = cross_product(ai_n, cross_product(ai_n, ai_vector))
+                                            ai_n2, alpha = ai_geometry(ai_vector, ai_n2)
+                                            grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance,
+                                                                                                          1)]
+                                            if get_partners:
+                                                grid_partners[ind][grid_list_dict['ai']] += \
+                                                    t_stacking_partner_position(ai_i, grid_point, ai_n2, offset,
+                                                                                ai_distance, alpha)
         # adding scores to grid
         grid_score['shape'][shape_inds] += 1
         grid_score['ha'][ha_inds] += 1

@@ -60,7 +60,9 @@ def dmif_data_structure(grid):
     grid_partners = []
     for position in grid:
         grid_score.append(position + [0] * (len(grid_score_dict.keys()) - 3))
-        grid_partners.append([[] if _ != 'hda' else [[], []] for _ in grid_list_dict.keys()])
+        grid_partners.append([[] if x[0] != 'hda' else [[], []] for x in sorted([[x, grid_list_dict[x]] for x in
+                                                                                 grid_list_dict.keys()],
+                                                                                key=operator.itemgetter(1))])
     grid_score = np.array([tuple(x) for x in grid_score], dtype=[(x[0], 'float64') for x in sorted([[x,
                           grid_score_dict[x]] for x in grid_score_dict.keys()], key=operator.itemgetter(1))])
     return [grid_score, grid_partners]
@@ -301,7 +303,7 @@ def buriedness(center_position, positions):
 
 
 def ai_geometry(AB, AC):
-    """ This function returns elements of an rectangular triangle important for ai calculation. """
+    """ This function returns characteristics of a triangle important for ai calculation. """
     alpha = vector_angle(AB, AC)
     if alpha > 90:
         AC = [-1 * x for x in AC]
@@ -340,7 +342,12 @@ def post_processing(results, traj_number, length):
             for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
                 dmif[feature_name] += result[0][feature_name]
             for partner_name in partners.dtype.names:
-                partners[partner_name] += result[1][partner_name]
+                if partner_name != 'hda':
+                    partners[partner_name] += result[1][partner_name]
+                else:
+                    for counter in range(len(partners)):
+                        partners[partner_name][counter][0] += result[1][partner_name][counter][0]
+                        partners[partner_name][counter][1] += result[1][partner_name][counter][1]
     for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
         dmif[feature_name] = ((dmif[feature_name] * 100) / (traj_number * length))
     dmif['ni'] = np.clip(dmif['ni'], 0, None)

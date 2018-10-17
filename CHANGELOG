@@ -3,6 +3,7 @@
  - improved MD helper files
  - added dmif excess analysis to compare dmifs
  - changed hi_hb to hi_norm, allows better comparison of hydrophobicity
+ - improved cation-pi interactions
  - corrected error in ai partner calculation
  - minor changes
 * v0.7.0
