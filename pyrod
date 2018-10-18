@@ -129,10 +129,10 @@ if __name__ == '__main__':
         positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
         if partner_path is not None:
             args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, partner_path,
-                     partner_path, debugging) for feature_name in feature_names]
+                     debugging) for feature_name in feature_names]
         else:
             args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, directory,
-                     partner_path, debugging) for feature_name in feature_names]
+                     debugging) for feature_name in feature_names]
         dmif = None
         update_user('Generating features.', logger)
         p = multiprocessing.Pool(processes=mp)
