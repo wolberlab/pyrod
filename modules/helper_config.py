@@ -22,7 +22,7 @@ except ImportError:
 def test_grid_parameters(config):
     center = [float(x.strip()) for x in config.get('test grid parameters', 'center').split(',')]
     edge_lengths = [float(x.strip()) for x in config.get('test grid parameters', 'edge lengths').split(',')]
-    name = '_'.join(str(_) for _ in center + edge_lengths + [space])
+    name = '_'.join(str(_) for _ in center + edge_lengths)
     return [center, edge_lengths, name]
 
 
