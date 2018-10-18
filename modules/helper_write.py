@@ -344,11 +344,11 @@ def pharmacophore_writer(features, file_format, name, path, weight):
 
 
 def pickle_writer(data, name, directory, logger):
-    name = '.'.join([name, 'p'])
+    name = '.'.join([name, 'pkl'])
     update_user('Writing {} to {}.'.format(name, directory), logger)
     file_path(name, directory)
     with open('/'.join([directory, name]), 'wb') as file:
-        pickle.dump(data, file)
+        pickle.dump(data, file, pickle.HIGHEST_PROTOCOL)
     return
 
 

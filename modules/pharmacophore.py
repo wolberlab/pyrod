@@ -65,7 +65,7 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
     logger = setup_logger('_'.join(['features', feature_name]), directory, debugging)
     update_user('Starting {} feature generation.'.format(feature_name), logger)
     if feature_name in grid_list_dict.keys():
-        with open(directory + '/data/' + feature_name + '.p', 'rb') as file:
+        with open(directory + '/data/' + feature_name + '.pkl', 'rb') as file:
             partners = pickle.load(file)
     else:
         partners = []

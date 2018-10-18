@@ -109,8 +109,8 @@ if __name__ == '__main__':
     if config.has_section('exclusion volume parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('exclusion volume parameters')]))
         if 'dmif' not in locals():
-            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.p'), logger)
-            dmif = pickle.load(directory + '/data/dmif.p')
+            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.pkl'), logger)
+            dmif = pickle.load(directory + '/data/dmif.pkl')
         ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius = exclusion_volume_parameters(config)
         evs = exclusion_volume_generator(dmif, directory, debugging, shape_min_cutoff, shape_max_cutoff, shape_radius,
                                          ev_radius, ev_space)
@@ -119,8 +119,8 @@ if __name__ == '__main__':
     if config.has_section('feature parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('feature parameters')]))
         if 'dmif' not in locals():
-            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.p'), logger)
-            dmif = pickle.load(directory + '/data/dmif.p')
+            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.pkl'), logger)
+            dmif = pickle.load(directory + '/data/dmif.pkl')
         features_per_feature_type, mp = feature_parameters(config)
         positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
         args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, directory, debugging)
