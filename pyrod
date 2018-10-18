@@ -109,8 +109,9 @@ if __name__ == '__main__':
     if config.has_section('exclusion volume parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('exclusion volume parameters')]))
         if 'dmif' not in locals():
-            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.pkl'), logger)
-            dmif = pickle.load(directory + '/data/dmif.pkl')
+            dmif_path = config.get('exclusion volume parameters', 'dmif')
+            update_user('Loading dmif from {}.'.format(dmif_path), logger)
+            dmif = pickle.load(dmif_path)
         ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius = exclusion_volume_parameters(config)
         evs = exclusion_volume_generator(dmif, directory, debugging, shape_min_cutoff, shape_max_cutoff, shape_radius,
                                          ev_radius, ev_space)
@@ -118,14 +119,21 @@ if __name__ == '__main__':
     # generating features
     if config.has_section('feature parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('feature parameters')]))
+        partner_path = None
         if 'dmif' not in locals():
-            update_user('Loading dmif from {}.'.format(directory + '/data/dmif.pkl'), logger)
-            dmif = pickle.load(directory + '/data/dmif.pkl')
+            dmif_path = config.get('feature parameters', 'dmif')
+            update_user('Loading dmif from {}.'.format(dmif_path), logger)
+            dmif = pickle.load(dmif_path)
+            partner_path = config.get('feature parameters', 'partners')
         features_per_feature_type, mp = feature_parameters(config)
         positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
-        args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, directory, debugging)
-                for feature_name in feature_names]
-        del dmif
+        if partner_path is not None:
+            args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, partner_path,
+                     partner_path, debugging) for feature_name in feature_names]
+        else:
+            args = [(positions, np.array(dmif[feature_name]), feature_name, features_per_feature_type, directory,
+                     partner_path, debugging) for feature_name in feature_names]
+        dmif = None
         update_user('Generating features.', logger)
         p = multiprocessing.Pool(processes=mp)
         results = p.starmap(features_generator, args, chunksize=1)
