@@ -88,8 +88,8 @@ def roc_analyzer(current_file, directory, number_of_actives, number_of_decoys):
     actives_scores, decoys_scores, actives_indices = sdf_parser('.'.join([file_name, 'sdf']))
     EFs = []
     for EF in [0.01, 0.05, 0.1, 1]:
-        EFs.append(enrichment_factor(actives_scores, decoys_scores, number_of_actives, number_of_decoys, EF))
-    result = [current_file] + EFs + [len(actives_scores)] + [actives_indices]
+        EFs.append(str(enrichment_factor(actives_scores, decoys_scores, number_of_actives, number_of_decoys, EF)))
+    result = [str(current_file)] + EFs + [str(len(actives_scores))] + [str(actives_indices)]
     print('\rPharmacophore {0}: EF1={1} EF5={2} EF10={3} EF100={4} actives={5}'.format(*result[:-1]))
     return result
 
@@ -105,87 +105,81 @@ def suppress_stdout():
            sys.stdout = old_stdout
 
 
-results = []
-actives_indices_collector = []
 number_of_actives = 0
-while current_file <= last_file:
-    sys.stdout.write('\rAnalyzing pharmacophore {} of {}.'.format(current_file, last_file))
-    roc_analysis = False
-    file_name = '/'.join([directory, str(current_file)])
-    with suppress_stdout():
-        subprocess.run('iscreen -q {0}.pml -d {1}:active -o {0}.sdf -l {0}.log'.format(file_name, actives).split(),
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    try:
-        with open('{}.log'.format(file_name, 'r')) as log_file:
-            if 'iscreen finished successfully' in log_file.read():
-                log_file.seek(0)
-                number_of_actives = 0
-                for line in log_file.readlines():
-                    if 'Using database' in line:
-                        try:
-                            number_of_actives = int(line.split()[-2])
-                            break
-                        except ValueError:
-                            print('\rNumber of actives in database cannot be found! Please check {}.log'.format(
-                                file_name))
-                            sys.exit()
-                if number_of_actives > 0:
-                    if round(number_of_actives * (minimum_of_actives / 100)) <= sdf_parser(
-                            '{}.sdf'.format(file_name), True):
-                        roc_analysis = True
-                    else:
-                        current_file += 1
-                else:
-                    print('\rNumber of actives in database is found to be 0! Please check {0}.log and {1}'.format(
-                        file_name, actives))
-                    sys.exit()
-    except FileNotFoundError:
-        pass
-    if roc_analysis:
+header = ['pharmacophore', 'EF1', 'EF5', 'EF10', 'EF100', 'number of active hits', 'active hits indices']
+with open('/'.join([directory, 'enrichment_factors.txt']), 'w') as result_file:
+    result_file.write('\t'.join(header) + '\n')
+    while current_file <= last_file:
+        sys.stdout.write('\rAnalyzing pharmacophore {} of {}.'.format(current_file, last_file))
+        roc_analysis = False
+        file_name = '/'.join([directory, str(current_file)])
         with suppress_stdout():
-            subprocess.run('iscreen -q {0}.pml -d {1}:active,{2}:inactive -o {0}.sdf -l {0}.log -R {0}.png'.format(
-                           file_name, actives, decoys).split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run('iscreen -q {0}.pml -d {1}:active -o {0}.sdf -l {0}.log'.format(file_name, actives).split(),
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
             with open('{}.log'.format(file_name, 'r')) as log_file:
                 if 'iscreen finished successfully' in log_file.read():
                     log_file.seek(0)
-                    database_counter = 0
                     number_of_actives = 0
-                    number_of_decoys = 0
                     for line in log_file.readlines():
                         if 'Using database' in line:
-                            if database_counter == 0:
-                                try:
-                                    number_of_actives = int(line.split()[-2])
-                                    database_counter += 1
-                                except ValueError:
-                                    print('\rNumber of actives in database cannot be found! Please check {}.log'.format(
-                                        file_name))
-                                    sys.exit()
-                            else:
-                                try:
-                                    number_of_decoys = int(line.split()[-2])
-                                    break
-                                except ValueError:
-                                    print('\rNumber of decoys in database cannot be found! Please check {}.log'.format(
-                                        file_name))
-                                    sys.exit()
-                    if number_of_actives > 0 and number_of_decoys > 0:
-                        result = roc_analyzer(current_file, directory, number_of_actives, number_of_decoys)
-                        if result is not None:
-                            actives_indices_collector += result[6]
-                            results.append(result)
+                            try:
+                                number_of_actives = int(line.split()[-2])
+                                break
+                            except ValueError:
+                                print('\rNumber of actives in database cannot be found! Please check {}.log'.format(
+                                    file_name))
+                                sys.exit()
+                    if number_of_actives > 0:
+                        if round(number_of_actives * (minimum_of_actives / 100)) <= sdf_parser(
+                                '{}.sdf'.format(file_name), True):
+                            roc_analysis = True
+                        else:
                             current_file += 1
                     else:
-                        print('\rNumber of actives or decoys in databases is found to be 0! Please check {0}.log,' +
-                              '{1} and {2}.'.format(file_name, actives, decoys))
+                        print('\rNumber of actives in database is found to be 0! Please check {0}.log and {1}'.format(
+                            file_name, actives))
                         sys.exit()
         except FileNotFoundError:
             pass
-with open('/'.join([directory, 'enrichment_factors.txt']), 'w') as result_file:
-    header = ['pharmacophore', 'EF1', 'EF5', 'EF10', 'EF100', 'number of active hits', 'active hits indices']
-    results = sorted(results, key=operator.itemgetter(5), reverse=True)
-    lines = ['\t'.join(map(str, line)) for line in [header] + results]
-    result_file.write('\n'.join(lines))
-print('Pharmacophores found {} % of actives.'.format(round((len(set(actives_indices_collector)) /
-      number_of_actives) * 100), 1))
+        if roc_analysis:
+            with suppress_stdout():
+                subprocess.run('iscreen -q {0}.pml -d {1}:active,{2}:inactive -o {0}.sdf -l {0}.log -R {0}.png'.format(
+                               file_name, actives, decoys).split(), stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
+            try:
+                with open('{}.log'.format(file_name, 'r')) as log_file:
+                    if 'iscreen finished successfully' in log_file.read():
+                        log_file.seek(0)
+                        database_counter = 0
+                        number_of_actives = 0
+                        number_of_decoys = 0
+                        for line in log_file.readlines():
+                            if 'Using database' in line:
+                                if database_counter == 0:
+                                    try:
+                                        number_of_actives = int(line.split()[-2])
+                                        database_counter += 1
+                                    except ValueError:
+                                        print('\rNumber of actives in database cannot be found! Please check '
+                                              '{}.log'.format(file_name))
+                                        sys.exit()
+                                else:
+                                    try:
+                                        number_of_decoys = int(line.split()[-2])
+                                        break
+                                    except ValueError:
+                                        print('\rNumber of decoys in database cannot be found! Please check '
+                                              '{}.log'.format(file_name))
+                                        sys.exit()
+                        if number_of_actives > 0 and number_of_decoys > 0:
+                            result = roc_analyzer(current_file, directory, number_of_actives, number_of_decoys)
+                            if result is not None:
+                                current_file += 1
+                                result_file.write('\t'.join(result) + '\n')
+                        else:
+                            print('\rNumber of actives or decoys in databases is found to be 0! Please check {0}.log,' +
+                                  '{1} and {2}.'.format(file_name, actives, decoys))
+                            sys.exit()
+            except FileNotFoundError:
+                pass
