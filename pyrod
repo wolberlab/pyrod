@@ -80,7 +80,7 @@ if __name__ == '__main__':
         center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length, \
             metal_names, map_formats, mp, get_partners = trajectory_analysis_parameters(config)
         update_user('Initializing grid.', logger)
-        grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths, space))
+        grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths, space), get_partners)
         args = [(topology, trajectory, counter, length, mp, traj_number, grid_score, grid_partners, first_frame,
                  last_frame, metal_names, directory, debugging, get_partners) for counter, trajectory in
                 enumerate(trajectories)]

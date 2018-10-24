@@ -262,7 +262,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                                     # pi-stacking
                                     if ai_distance <= 4.7:
                                         # check offset between grid point and aromatic center
-                                        if 0.001 <= offset <= 2.0:
+                                        if offset <= 2.0:
                                             grid_score['ai'][ind] += pi_stacking_distance_score_dict[round(ai_distance,
                                                                                                            1)]
                                             if get_partners:
@@ -271,7 +271,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                                     # t-stacking
                                     else:
                                         # check offset between grid point and aromatic center
-                                        if 0.001 <= offset <= 0.5:
+                                        if offset <= 0.5:
                                             grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance,
                                                                                                           1)]
                                             if get_partners:
@@ -283,7 +283,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                                     if ai_distance >= 4.6:
                                         # check offset between grid point and aromatic center
                                         offset = adjacent(alpha, ai_distance)
-                                        if 0.001 <= offset <= 0.5:
+                                        if offset <= 0.5:
                                             ai_n2 = cross_product(ai_n, cross_product(ai_n, ai_vector))
                                             ai_n2, alpha = ai_geometry(ai_vector, ai_n2)
                                             grid_score['ai'][ind] += t_stacking_distance_score_dict[round(ai_distance,

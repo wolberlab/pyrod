@@ -38,7 +38,7 @@ def standard_deviation(data):
 
 def vector(a, b):
     """ This function returns the vector in 3-dimensional space going from a to b. """
-    return [b[0] - a[0], b[1] - a[1], b[2]- a[2]]
+    return [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
 
 
 def dot_product(a, b):

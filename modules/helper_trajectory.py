@@ -51,7 +51,7 @@ def grid_generator(center, edge_lengths, space):
     return grid
 
 
-def dmif_data_structure(grid):
+def dmif_data_structure(grid, get_partners):
     """ This function generates the central data structure for dmif analysis of trajectories. Returned will be a grid as
     numpy structured array whose first three columns are the coordinates and whose other columns are used for holding
     scores in later trajectory analysis. Additionally, a list of lists of lists will be returned with the same length
@@ -60,9 +60,10 @@ def dmif_data_structure(grid):
     grid_partners = []
     for position in grid:
         grid_score.append(position + [0] * (len(grid_score_dict.keys()) - 3))
-        grid_partners.append([[] if x[0] != 'hda' else [[], []] for x in sorted([[x, grid_list_dict[x]] for x in
-                                                                                 grid_list_dict.keys()],
-                                                                                key=operator.itemgetter(1))])
+        if get_partners:
+            grid_partners.append([[] if x[0] != 'hda' else [[], []] for x in sorted([[x, grid_list_dict[x]] for x in
+                                                                                     grid_list_dict.keys()],
+                                                                                    key=operator.itemgetter(1))])
     grid_score = np.array([tuple(x) for x in grid_score], dtype=[(x[0], 'float64') for x in sorted([[x,
                           grid_score_dict[x]] for x in grid_score_dict.keys()], key=operator.itemgetter(1))])
     return [grid_score, grid_partners]
