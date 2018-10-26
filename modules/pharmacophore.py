@@ -60,7 +60,7 @@ def exclusion_volume_generator(dmif, directory, debugging, shape_cutoff, restric
     exclusion_volumes = []
     counter = 1
     start = time.time()
-    for index, row in enumerate(dmif_shape):
+    for index in range(shape_grid_size):
         # grid_point index should not be in used list
         if index not in used:
             neighbor_list = shape_tree.query_ball_point(positions[index], exclusion_volume_space / 2)
@@ -101,38 +101,38 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
         logger.debug('Feature {} maximum of remaining grid points at {}.'.format(feature_name, feature_maximum))
         indices_not_checked = np.where(abs(feature_scores - feature_maximum) < 1e-8)[0]
         indices = []
-        # check if position already part of feature
+        # check if grid points within minimum tolerance already used for features
         for index_not_checked in indices_not_checked:
-            if index_not_checked in not_used:
+            feature_indices = tree.query_ball_point(positions[index_not_checked], r=1.5)
+            if len(feature_indices) + len(used) == len(set(feature_indices + used)):
                 indices.append(index_not_checked)
-        # pass if no allowed index available
-        if len(indices) == 0:
-            pass
-        # check if only one voxel
-        elif len(indices) == 1:
-            index = indices[0]
-            tolerance, feature_indices = feature_tolerance(positions[index], tree, feature_scores, feature_maximum)
-        # if more than one voxel, search for the ones with the biggest tolerance
-        else:
-            tolerance, indices_maximal_tolerance, feature_indices_list = maximal_feature_tolerance(indices, positions,
-                                                                                                   tree, feature_scores,
-                                                                                                   feature_maximum)
-            # if more than one voxel with biggest tolerance, search for the one with the biggest score
-            if len(indices_maximal_tolerance) > 1:
-                index, feature_indices = maximal_sum_of_scores(feature_scores, indices_maximal_tolerance,
-                                                               feature_indices_list)
             else:
-                index = indices_maximal_tolerance[0]
-                feature_indices = feature_indices_list[0]
-        if len(feature_indices) + len(used) > len(set(feature_indices + used)):
-            not_used = [x for x in not_used if x != index]
-        else:
-            generated_features.append(generate_feature(feature_name, index, positions, partners, feature_scores,
-                                                       tolerance))
-            not_used = [x for x in not_used if x not in feature_indices]
-            used += feature_indices
-        if len([x for x in generated_features if x[0] == feature_name]) >= features_per_feature_type:
-            break
+                not_used = [x for x in not_used if x != index_not_checked]
+        if len(indices) > 0:
+            # check if only one grid point
+            if len(indices) == 1:
+                index = indices[0]
+                tolerance, feature_indices = feature_tolerance(positions[index], tree, feature_scores, feature_maximum)
+            # if more than one grid point, search for the ones with the biggest tolerance
+            else:
+                tolerance, indices_maximal_tolerance, feature_indices_list = \
+                    maximal_feature_tolerance(indices, positions, tree, feature_scores, feature_maximum)
+                # if more than one grid point with biggest tolerance, search for the one with the biggest score
+                if len(indices_maximal_tolerance) > 1:
+                    index, feature_indices = maximal_sum_of_scores(feature_scores, indices_maximal_tolerance,
+                                                                   feature_indices_list)
+                else:
+                    index = indices_maximal_tolerance[0]
+                    feature_indices = feature_indices_list[0]
+            if len(feature_indices) + len(used) > len(set(feature_indices + used)):
+                not_used = [x for x in not_used if x != index]
+            else:
+                generated_features.append(generate_feature(feature_name, index, positions, partners, feature_scores,
+                                                           tolerance))
+                not_used = [x for x in not_used if x not in feature_indices]
+                used += feature_indices
+            if len([x for x in generated_features if x[0] == feature_name]) >= features_per_feature_type:
+                break
     update_user('Generated {} {} features.'.format(len([x for x in generated_features if x[0] == feature_name]),
                                                    feature_name), logger)
     return generated_features
