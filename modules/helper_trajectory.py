@@ -64,7 +64,7 @@ def dmif_data_structure(grid, get_partners):
             grid_partners.append([[] if x[0] != 'hda' else [[], []] for x in sorted([[x, grid_list_dict[x]] for x in
                                                                                      grid_list_dict.keys()],
                                                                                     key=operator.itemgetter(1))])
-    grid_score = np.array([tuple(x) for x in grid_score], dtype=[(x[0], 'float64') for x in sorted([[x,
+    grid_score = np.array([tuple(x) for x in grid_score], dtype=[(x[0], float) for x in sorted([[x,
                           grid_score_dict[x]] for x in grid_score_dict.keys()], key=operator.itemgetter(1))])
     return [grid_score, grid_partners]
 
@@ -355,17 +355,17 @@ def post_processing(results, traj_number, length):
     dmif['pi'] = np.clip(dmif['pi'], 0, None)
     dmif['hi_norm'] = np.divide(dmif['hi_norm'], dmif['shape'], where=dmif['shape'] >= 1)
     dmif['hi_norm'][dmif['shape'] < 1] = 0
-    hb = np.array(dmif['hd'] + dmif['hd2'] + dmif['ha'] + dmif['ha2'] + dmif['hda'], dtype=[('hb', 'float64')])
+    hb = np.array(dmif['hd'] + dmif['hd2'] + dmif['ha'] + dmif['ha2'] + dmif['hda'], dtype=[('hb', float)])
     dmif = rfn.merge_arrays([dmif, hb], flatten=True, usemask=False)
-    hd_combo = np.array(dmif['hd'] + dmif['hd2'] + dmif['hda'], dtype=[('hd_combo', 'float64')])
+    hd_combo = np.array(dmif['hd'] + dmif['hd2'] + dmif['hda'], dtype=[('hd_combo', float)])
     dmif = rfn.merge_arrays([dmif, hd_combo], flatten=True, usemask=False)
-    ha_combo = np.array(dmif['ha'] + dmif['ha2'] + dmif['hda'], dtype=[('ha_combo', 'float64')])
+    ha_combo = np.array(dmif['ha'] + dmif['ha2'] + dmif['hda'], dtype=[('ha_combo', float)])
     dmif = rfn.merge_arrays([dmif, ha_combo], flatten=True, usemask=False)
     return dmif, partners
 
 
 def grid_partners_to_array(grid_partners):
-    grid_partners = np.array([tuple(x) for x in grid_partners], dtype=[(x[0], 'O') for x in
+    grid_partners = np.array([tuple(x) for x in grid_partners], dtype=[(x[0], object) for x in
                              sorted([[x, grid_list_dict[x]] for x in grid_list_dict.keys()],
                              key=operator.itemgetter(1))])
     return grid_partners

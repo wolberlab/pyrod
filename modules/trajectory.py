@@ -50,10 +50,10 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             u = mda.Universe(topology, trajectory)
+    dtype = [('atomid', int), ('resname', str), ('resid', int), ('name', str), ('type', str)]
     topology = np.array([(a, b, c, d, e) for a, b, c, d, e in
                          zip(range(len(u.atoms.resnames)), u.atoms.resnames, u.atoms.resids, u.atoms.names,
-                             u.atoms.types)], dtype=[('atomid', 'i4'), ('resname', 'U10'), ('resid', 'i4'),
-                                                     ('name', 'U10'), ('type', 'U10')])
+                         u.atoms.types)], dtype=dtype)
     positions = np.array([[x, y, z] for x, y, z in zip(grid_score['x'], grid_score['y'], grid_score['z'])])
     x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_parameters(positions)[:-1]
     tree = cKDTree(positions)
