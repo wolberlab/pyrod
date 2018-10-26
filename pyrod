@@ -77,10 +77,10 @@ if __name__ == '__main__':
     if config.has_section('trajectory analysis parameters'):
         update_user('Starting trajectory analysis.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('trajectory analysis parameters')]))
-        center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length, \
-            metal_names, map_formats, mp, get_partners = trajectory_analysis_parameters(config)
+        center, edge_lengths, topology, trajectories, traj_number, first_frame, last_frame, length, metal_names, \
+            map_formats, mp, get_partners = trajectory_analysis_parameters(config)
         update_user('Initializing grid.', logger)
-        grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths, space), get_partners)
+        grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths), get_partners)
         args = [(topology, trajectory, counter, length, mp, traj_number, grid_score, grid_partners, first_frame,
                  last_frame, metal_names, directory, debugging, get_partners) for counter, trajectory in
                 enumerate(trajectories)]

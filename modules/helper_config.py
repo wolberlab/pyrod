@@ -29,7 +29,6 @@ def test_grid_parameters(config):
 def trajectory_analysis_parameters(config):
     center = [float(x.strip()) for x in config.get('trajectory analysis parameters', 'center').split(',')]
     edge_lengths = [float(x.strip()) for x in config.get('trajectory analysis parameters', 'edge lengths').split(',')]
-    space = float(config.get('trajectory analysis parameters', 'grid space'))
     topology = config.get('trajectory analysis parameters', 'topology')
     trajectories = [x.strip() for x in config.get('trajectory analysis parameters', 'trajectories').split(',')]
     traj_number = len(trajectories)
@@ -58,8 +57,8 @@ def trajectory_analysis_parameters(config):
     if config.has_option('trajectory analysis parameters', 'dmifs only'):
         if config.get('trajectory analysis parameters', 'dmifs only') == 'true':
             get_partners = False
-    return [center, edge_lengths, space, topology, trajectories, traj_number, first_frame, last_frame, length,
-            metal_names, map_formats, mp, get_partners]
+    return [center, edge_lengths, topology, trajectories, traj_number, first_frame, last_frame, length, metal_names,
+            map_formats, mp, get_partners]
 
 
 def exclusion_volume_parameters(config):

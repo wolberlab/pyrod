@@ -29,7 +29,7 @@ except ImportError:
     from modules.helper_update import update_user
 
 
-def grid_generator(center, edge_lengths, space):
+def grid_generator(center, edge_lengths, space=0.5):
     """ This function generates rectangular grids as list of lists. The variable space defines the distance between the
     grid points. The center of the grid and the length of the grid edges can be defined by center and edge_lengths. """
     x = min_x = center[0] - (edge_lengths[0] / 2)
