@@ -6,6 +6,7 @@ This module contains functions to generate features and pharmacophores.
 # python standard libraries
 import copy
 from itertools import combinations
+import math
 import os
 import pickle
 import sys
@@ -18,12 +19,14 @@ from scipy.spatial import cKDTree
 
 # pyrod modules
 try:
+    from pyrod.modules.helper_math import distance
     from pyrod.modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
     from pyrod.modules.helper_update import update_progress, update_user, bytes_to_text
     from pyrod.modules.helper_write import file_path, pml_feature_volume, setup_logger
     from pyrod.modules.lookup import grid_list_dict
 except ImportError:
+    from modules.helper_math import distance
     from modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
     from modules.helper_update import update_progress, update_user, bytes_to_text
@@ -31,30 +34,49 @@ except ImportError:
     from modules.lookup import grid_list_dict
 
 
-def exclusion_volume_generator(dmif, directory, debugging, shape_minimum_cutoff=1, shape_maximum_cutoff=10,
-                               shape_radius=3, exclusion_volume_radius=1, exclusion_volume_space=2):
+def exclusion_volume_generator(dmif, directory, debugging, shape_cutoff, restrictive):
     logger = setup_logger('exclusion_volumes', directory, debugging)
     update_user('Generating exclusion volumes.', logger)
-    positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
-    tree = cKDTree(positions)
-    shape_score_list = dmif['shape']
-    length = len(positions)
+    grid_space = 0.5
+    exclusion_volume_space = 4
+    if restrictive:
+        exclusion_volume_space = 2
+    grid_tree = cKDTree([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
+    dtype = [('x', float), ('y', float), ('z', float), ('shape', int), ('count', int)]
+    dmif_shape = np.array([(x, y, z, shape, 0) for x, y, z, shape in zip(dmif['x'], dmif['y'], dmif['z'], dmif['shape'])
+                           if shape < shape_cutoff], dtype=dtype)
+    positions = np.array([[x, y, z] for x, y, z in zip(dmif_shape['x'], dmif_shape['y'], dmif_shape['z'])])
+    shape_tree = cKDTree(positions)
+    shape_grid_size = len(dmif_shape)
+    # store number of neighbors with shape score smaller than shape_cutoff for grid points
+    for index in range(shape_grid_size):
+        dmif_shape['count'][index] = len(shape_tree.query_ball_point(positions[index], grid_space * 4))
+    # sort for neighbor count
+    dmif_shape = np.sort(dmif_shape, order='count')
+    # rebuild positions and shape_tree
+    positions = np.array([[x, y, z] for x, y, z in zip(dmif_shape['x'], dmif_shape['y'], dmif_shape['z'])])
+    shape_tree = cKDTree(positions)
+    used = []
     exclusion_volumes = []
-    start = time.time()
     counter = 1
-    for index, (position, shape_score) in enumerate(zip(positions, shape_score_list)):
-        if position[0] % exclusion_volume_space == 0:
-            if position[1] % exclusion_volume_space == 0:
-                if position[2] % exclusion_volume_space == 0:
-                    if shape_score <= shape_minimum_cutoff:
-                        shape_indices = tree.query_ball_point(position, r=shape_radius)
-                        shape_maximum = max(shape_score_list[shape_indices])
-                        if shape_maximum >= shape_maximum_cutoff:
-                            exclusion_volumes.append([counter, 'ev', position, exclusion_volume_radius, [], 0, 0])
+    start = time.time()
+    for index, row in enumerate(dmif_shape):
+        # grid_point index should not be in used list
+        if index not in used:
+            neighbor_list = shape_tree.query_ball_point(positions[index], exclusion_volume_space / 2)
+            # elements of neighbor_list should not be in used list
+            if len(set(neighbor_list + used)) == len(neighbor_list) + len(used):
+                # grid_point should not be at border of grid
+                if len(grid_tree.query_ball_point(positions[index], r=grid_space * 2)) == 33:
+                    # grid_point should not be directly at border of binding pocket
+                    if len(shape_tree.query_ball_point(positions[index], r=grid_space)) == 7:
+                        # grid_point should not be surrounded by grid_points outside the binding pocket
+                        if len(shape_tree.query_ball_point(positions[index], r=grid_space * 2)) < 33:
+                            exclusion_volumes.append([counter, 'ev', positions[index], 1, [], 0, 0])
                             counter += 1
-        if ((index + 1) % 1000 == 0) or ((index + 1) % length == 0):
-            eta = ((time.time() - start) / (index + 1)) * (length - (index + 1))
-            update_progress(float(index + 1) / length, 'Progress of exclusion volume generation', eta)
+                            used += neighbor_list
+        eta = ((time.time() - start) / (index + 1)) * (shape_grid_size - (index + 1))
+        update_progress(float(index + 1) / shape_grid_size, 'Progress of exclusion volume generation', eta)
         logger.debug('Passed grid index {}.'.format(index))
     update_user('Finished with generation of {} exclusion volumes.'.format(len(exclusion_volumes)), logger)
     return exclusion_volumes

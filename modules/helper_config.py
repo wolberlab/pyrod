@@ -63,12 +63,13 @@ def trajectory_analysis_parameters(config):
 
 
 def exclusion_volume_parameters(config):
-    ev_space = float(config.get('exclusion volume parameters', 'space'))
-    shape_min_cutoff = float(config.get('exclusion volume parameters', 'shape min cutoff'))
-    shape_max_cutoff = float(config.get('exclusion volume parameters', 'shape max cutoff'))
-    shape_radius = float(config.get('exclusion volume parameters', 'shape radius'))
-    ev_radius = float(config.get('exclusion volume parameters', 'exclusion volume radius'))
-    return [ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius]
+    shape_cutoff = float(config.get('exclusion volume parameters', 'shape cutoff'))
+    restrictive = config.get('exclusion volume parameters', 'restrictive')
+    if restrictive == 'true':
+        restrictive = True
+    else:
+        restrictive = False
+    return [shape_cutoff, restrictive]
 
 
 def feature_parameters(config):

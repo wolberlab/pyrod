@@ -111,10 +111,10 @@ if __name__ == '__main__':
         if 'dmif' not in locals():
             dmif_path = config.get('exclusion volume parameters', 'dmif')
             update_user('Loading dmif from {}.'.format(dmif_path), logger)
-            dmif = pickle.load(dmif_path)
-        ev_space, shape_min_cutoff, shape_max_cutoff, shape_radius, ev_radius = exclusion_volume_parameters(config)
-        evs = exclusion_volume_generator(dmif, directory, debugging, shape_min_cutoff, shape_max_cutoff, shape_radius,
-                                         ev_radius, ev_space)
+            with open(dmif_path, 'rb') as file:
+                dmif = pickle.load(file)
+        shape_cutoff, restrictive = exclusion_volume_parameters(config)
+        evs = exclusion_volume_generator(dmif, directory, debugging, shape_cutoff, restrictive)
         pickle_writer(evs, 'exclusion_volumes', '/'.join([directory, 'data']), logger)
     # generating features
     if config.has_section('feature parameters'):
@@ -123,7 +123,8 @@ if __name__ == '__main__':
         if 'dmif' not in locals():
             dmif_path = config.get('feature parameters', 'dmif')
             update_user('Loading dmif from {}.'.format(dmif_path), logger)
-            dmif = pickle.load(dmif_path)
+            with open(dmif_path, 'rb') as file:
+                dmif = pickle.load(file)
             partner_path = config.get('feature parameters', 'partners')
         features_per_feature_type, mp = feature_parameters(config)
         positions = np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])])
