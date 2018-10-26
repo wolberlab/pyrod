@@ -6,6 +6,7 @@ This module contains helper functions to write out data.
 
 # python standard libraries
 import xml.etree.ElementTree as et
+import pickle
 
 # pyrod modules
 try:
@@ -23,3 +24,10 @@ except ImportError:
 def pml_reader(path):
     pharmacophore = et.parse(path)
     return pharmacophore
+
+
+def pickle_reader(path, text, logger):
+    update_user('Loading {} from {}.'.format(text, path), logger)
+    with open(path, 'rb') as file:
+        data = pickle.load(file)
+    return data

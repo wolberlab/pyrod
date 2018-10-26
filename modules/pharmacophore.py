@@ -6,9 +6,7 @@ This module contains functions to generate features and pharmacophores.
 # python standard libraries
 import copy
 from itertools import combinations
-import math
 import os
-import pickle
 import sys
 import time
 import xml.etree.ElementTree as et
@@ -22,6 +20,7 @@ try:
     from pyrod.modules.helper_math import distance
     from pyrod.modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
+    from pyrod.modules.helper_read import pickle_reader
     from pyrod.modules.helper_update import update_progress, update_user, bytes_to_text
     from pyrod.modules.helper_write import file_path, pml_feature_volume, setup_logger
     from pyrod.modules.lookup import grid_list_dict
@@ -29,6 +28,7 @@ except ImportError:
     from modules.helper_math import distance
     from modules.helper_pharmacophore import center, feature_tolerance, maximal_feature_tolerance, \
         maximal_sum_of_scores, generate_feature, evaluate_pharmacophore
+    from modules.helper_read import pickle_reader
     from modules.helper_update import update_progress, update_user, bytes_to_text
     from modules.helper_write import file_path, pml_feature_volume, setup_logger
     from modules.lookup import grid_list_dict
@@ -82,13 +82,15 @@ def exclusion_volume_generator(dmif, directory, debugging, shape_cutoff, restric
     return exclusion_volumes
 
 
-def features_generator(positions, feature_scores, feature_name, features_per_feature_type, directory, debugging):
+def features_generator(positions, feature_scores, feature_name, features_per_feature_type, directory, partner_path,
+                       debugging):
     """ This function generates features with variable tolerance based on a global maximum search algorithm. """
     logger = setup_logger('_'.join(['features', feature_name]), directory, debugging)
     update_user('Starting {} feature generation.'.format(feature_name), logger)
+    if partner_path is None:
+        partner_path = directory
     if feature_name in grid_list_dict.keys():
-        with open(directory + '/data/' + feature_name + '.pkl', 'rb') as file:
-            partners = pickle.load(file)
+        partners = pickle_reader(partner_path + '/data/' + feature_name + '.pkl', feature_name + '.pkl', logger)
     else:
         partners = []
     score_minimum = 1
