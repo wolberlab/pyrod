@@ -14,7 +14,7 @@ proc fitframes { molid seltext } {
   return
 }
 fitframes top backbone
-animate write gro ../mds_prep/$argv.gro beg 0 end 0
+animate write pdb ../mds_prep/$argv.pdb beg 0 end 0
 animate write dcd ../mds_prep/$argv.dcd beg 1 end -1
 quit
 
