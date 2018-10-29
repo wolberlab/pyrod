@@ -1,6 +1,8 @@
 * v0.7.1
- - changed topology system
- - improved MD helper files
+ - improved library generation
+ - improved exclusion volume generation
+ - improved topology system
+ - improved helper files
  - added dmif excess analysis to compare dmifs
  - changed hi_hb to hi_norm, allows better comparison of hydrophobicity
  - improved cation-pi interactions

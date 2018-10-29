@@ -112,12 +112,12 @@ def pharmacophore_parameters(config):
 
 def library_parameters(config, path):
     pharmacophore_path = config.get('library parameters', 'pharmacophore path')
-    minimal_features = int(config.get('library parameters', 'minimal features'))
-    maximal_features = int(config.get('library parameters', 'maximal features'))
-    maximal_hydrogen_bonds = int(config.get('library parameters', 'maximal hydrogen bonds'))
-    maximal_hydrophobic_interactions = int(config.get('library parameters', 'maximal hydrophobic interactions'))
-    maximal_aromatic_interactions = int(config.get('library parameters', 'maximal aromatic interactions'))
-    maximal_ionizable_interactions = int(config.get('library parameters', 'maximal ionizable interactions'))
+    library_dict = {}
+    for parameter in ['minimal features', 'maximal features', 'minimal hydrogen bonds', 'maximal hydrogen bonds',
+                      'minimal hydrophobic interactions', 'maximal hydrophobic interactions', 
+                      'minimal aromatic interactions', 'maximal aromatic interactions', 
+                      'minimal ionizable interactions', 'maximal ionizable interactions']:
+        library_dict[parameter] = int(config.get('library parameters', parameter))
     make_mandatory = False
     if config.get('library parameters', 'make optional features mandatory') == 'true':
         make_mandatory = True
@@ -126,9 +126,10 @@ def library_parameters(config, path):
     else:
         library_name = 'library'
     library_path = '/'.join([path, library_name])
-    return [pharmacophore_path, minimal_features, maximal_features, maximal_hydrogen_bonds,
-            maximal_hydrophobic_interactions, maximal_aromatic_interactions, maximal_ionizable_interactions,
-            library_path, make_mandatory]
+    pyrod_pharmacophore = True
+    if config.get('library parameters', 'pyrod pharmacophore') == 'false':
+        pyrod_pharmacophore = False
+    return [pharmacophore_path, library_dict, library_path, make_mandatory, pyrod_pharmacophore]
 
 
 def dmif_excess_parameters(config):

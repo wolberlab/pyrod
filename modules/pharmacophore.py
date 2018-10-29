@@ -140,9 +140,7 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
     return generated_features
 
 
-def library_generator(pharmacophore_path, minimal_features, maximal_features, maximal_hydrogen_bonds,
-                      maximal_hydrophobic_interactions, maximal_aromatic_interactions, maximal_ionizable_interactions,
-                      library_path, make_mandatory):
+def library_generator(pharmacophore_path, library_dict, library_path, make_mandatory, pyrod_pharmacophore):
     super_pharmacophore, pharmacophore_library = [], []
     essential_hb_features, essential_hi_features, essential_ai_features, essential_ii_features = [], [], [], []
     optional_hb_features, optional_hi_features, optional_ai_features, optional_ii_features = [], [], [], []
@@ -195,23 +193,30 @@ def library_generator(pharmacophore_path, minimal_features, maximal_features, ma
                     essential_ai_features.append(index)
     # generating pharmacophore library
     for hbs in [combinations(optional_hb_features, x) for x in
-                range(maximal_hydrogen_bonds - len(essential_hb_features) + 1)]:
+                range(library_dict['minimal hydrogen bonds'] - len(essential_hb_features),
+                      library_dict['maximal hydrogen bonds'] - len(essential_hb_features) + 1)]:
         for hbs_ in hbs:
             for his in [combinations(optional_hi_features, x) for x in
-                        range(maximal_hydrophobic_interactions - len(essential_hi_features) + 1)]:
+                        range(library_dict['minimal hydrophobic interactions'] - len(essential_hi_features),
+                              library_dict['maximal hydrophobic interactions'] - len(essential_hi_features) + 1)]:
                 for his_ in his:
                     for ais in [combinations(optional_ai_features, x) for x in
-                                range(maximal_aromatic_interactions - len(essential_ai_features) + 1)]:
+                                range(library_dict['minimal aromatic interactions'] - len(essential_ai_features),
+                                      library_dict['maximal aromatic interactions'] - len(essential_ai_features) + 1)]:
                         for ais_ in ais:
                             for iis in [combinations(optional_ii_features, x) for x in
-                                        range(maximal_ionizable_interactions - len(essential_ii_features) + 1)]:
+                                        range(library_dict['minimal ionizable interactions'] -
+                                              len(essential_ii_features),
+                                              library_dict['maximal ionizable interactions'] -
+                                              len(essential_ii_features) + 1)]:
                                 for iis_ in iis:
                                     pharmacophore = (essential_hb_features + list(hbs_) +
                                                      essential_hi_features + list(his_) +
                                                      essential_ai_features + list(ais_) +
                                                      essential_ii_features + list(iis_))
-                                    if evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
-                                                              maximal_features):
+                                    if evaluate_pharmacophore(pharmacophore, super_pharmacophore,
+                                                              library_dict['minimal features'],
+                                                              library_dict['maximal features'], pyrod_pharmacophore):
                                         pharmacophore_library.append(pharmacophore)
     feature_indices = (essential_hb_features + essential_hi_features + essential_ii_features + essential_ai_features +
                        optional_hb_features + optional_hi_features + optional_ii_features + optional_ai_features)

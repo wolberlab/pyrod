@@ -151,10 +151,12 @@ def select_features(features, hbs_number, his_number, iis_number, ais_number):
     return hbs + his + iis + ais
 
 
-def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features, maximal_features):
+def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features, maximal_features, pyrod_pharmacophore):
+    hb_positions = []
     hi_positions = []
     ii_positions = []
     positions = []
+    hda_dict = {}
     for index in pharmacophore:
         position = None
         feature = super_pharmacophore[index]
@@ -164,7 +166,7 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
             position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
             if feature_name == 'H':
                 hi_positions.append(position)
-            else:
+            elif feature_name in ['PI', 'NI']:
                 ii_positions.append(position)
         elif feature_name in ['HBA', 'HBD']:
             if feature_name == 'HBA':
@@ -172,6 +174,21 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
             else:
                 position = feature.find('origin')
             position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
+            # hd and ha from hda feature should be together in pyrod pharmacophores
+            if pyrod_pharmacophore:
+                # check if hda feature
+                if len(feature.attrib['featureId'].split('_')) > 1:
+                    featureId = feature.attrib['featureId'].split('_')[0]
+                    # fill hda_dict about presence of hd and ha
+                    if featureId in hda_dict.keys():
+                        hda_dict[featureId] += 1
+                    else:
+                        hda_dict[featureId] = 1
+                    # only ad position once per hda feature
+                    if feature.attrib['featureId'].split('_')[1] == '1':
+                        hb_positions.append(position)
+                else:
+                    hb_positions.append(position)
         if position is not None:
             if position not in positions:
                 positions.append(position)
@@ -184,6 +201,14 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
     # hydrophobic features should not be within 3 A of ionizable features
     for pair in product(hi_positions, ii_positions):
         if distance(*pair) < 3:
+            return False
+    if pyrod_pharmacophore:
+        # different hydrogen bond types should not appear within 1.5 A
+        for pair in combinations(hb_positions, 2):
+            if distance(*pair) < 1.5:
+                return False
+        # hd and ha from hda features should be together
+        if 1 in hda_dict.values():
             return False
     # different ionizable features should not appear within 3 A
     for pair in combinations(ii_positions, 2):
