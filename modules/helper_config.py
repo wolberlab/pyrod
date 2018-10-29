@@ -48,11 +48,7 @@ def trajectory_analysis_parameters(config):
     map_formats = []
     if len(config.get('trajectory analysis parameters', 'map formats')) > 0:
         map_formats = [x.strip() for x in config.get('trajectory analysis parameters', 'map formats').split(',')]
-    mp = config.get('trajectory analysis parameters', 'number of processes')
-    if len(mp) > 0:
-        mp = int(mp)
-    else:
-        mp = 1
+    mp = int(config.get('trajectory analysis parameters', 'number of processes'))
     get_partners = True
     if config.has_option('trajectory analysis parameters', 'dmifs only'):
         if config.get('trajectory analysis parameters', 'dmifs only') == 'true':
@@ -73,11 +69,7 @@ def exclusion_volume_parameters(config):
 
 def feature_parameters(config):
     features_per_feature_type = int(config.get('feature parameters', 'features per feature type'))
-    mp = config.get('feature parameters', 'number of processes')
-    if len(mp) > 0:
-        mp = int(mp)
-    else:
-        mp = 1
+    mp = int(config.get('feature parameters', 'number of processes'))
     return [features_per_feature_type, mp]
 
 
