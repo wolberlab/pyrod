@@ -156,7 +156,7 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
     hi_positions = []
     ii_positions = []
     positions = []
-    hda_dict = {}
+    hb_dict = {}
     for index in pharmacophore:
         position = None
         feature = super_pharmacophore[index]
@@ -174,16 +174,16 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
             else:
                 position = feature.find('origin')
             position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
-            # hd and ha from hda feature should be together in pyrod pharmacophores
+            # sub features from hd2, ha2 and hda should be together in pyrod pharmacophores
             if pyrod_pharmacophore:
                 # check if hda feature
                 if len(feature.attrib['featureId'].split('_')) > 1:
                     featureId = feature.attrib['featureId'].split('_')[0]
-                    # fill hda_dict about presence of hd and ha
-                    if featureId in hda_dict.keys():
-                        hda_dict[featureId] += 1
+                    # fill hb_dict about presence of hd and ha
+                    if featureId in hb_dict.keys():
+                        hb_dict[featureId] += 1
                     else:
-                        hda_dict[featureId] = 1
+                        hb_dict[featureId] = 1
                     # only ad position once per hda feature
                     if feature.attrib['featureId'].split('_')[1] == '1':
                         hb_positions.append(position)
@@ -207,8 +207,8 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, minimal_features,
         for pair in combinations(hb_positions, 2):
             if distance(*pair) < 1.5:
                 return False
-        # hd and ha from hda features should be together
-        if 1 in hda_dict.values():
+        # sub features from hd2, ha2 and hda should be together
+        if 1 in hb_dict.values():
             return False
     # different ionizable features should not appear within 3 A
     for pair in combinations(ii_positions, 2):
