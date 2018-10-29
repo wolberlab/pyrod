@@ -50,7 +50,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             u = mda.Universe(topology, trajectory)
-    dtype = [('atomid', int), ('resname', str), ('resid', int), ('name', str), ('type', str)]
+    dtype = [('atomid', int), ('resname', 'U10'), ('resid', int), ('name', 'U10'), ('type', 'U10')]
     topology = np.array([(a, b, c, d, e) for a, b, c, d, e in
                          zip(range(len(u.atoms.resnames)), u.atoms.resnames, u.atoms.resids, u.atoms.names,
                          u.atoms.types)], dtype=dtype)
