@@ -4,15 +4,19 @@ import simtk.unit as unit
 from sys import stdout
 import os
 
-pdb_file = 'name' # name of pdb file without file ending for mds
-directory = '/path/to/directory' # loacation of pdb file
-passed_mds = 0 # number of mds that have been already generated
-number_mds = 10 # number of mds that should be generated
-md_length = 10 # length of md in nano seconds
+pdb_file = 'name'  # name of pdb file without file ending for mds
+directory = '/path/to/directory'  # location of pdb file
+passed_mds = 0  # number of mds that have been already generated
+number_mds = 10  # number of mds that should be generated
+md_length = 10  # length of md in nano seconds
 forcefield = 'amber14-all.xml'
 water_model = 'amber14/tip4pew.xml'
 
-# ids of atoms to restrain (check in pdb file, but id of 206 in pdb is 205 in openmm)
+# restrain protein heavy atoms
+restrain_heavy_atoms = False
+non_protein_resnames = ['HOH', 'NA', 'CL']  # resnames of atoms that should not be restrained
+
+# custom ids of atoms to restrain (check in pdb file, but id of 206 in pdb is 205 in openmm)
 restrain_ids = []
 
 # internals
@@ -40,14 +44,22 @@ modeller.addExtraParticles(forcefield)
 for counter in range(passed_mds, number_mds):
     system = forcefield.createSystem(modeller.topology, nonbondedMethod=app.PME, nonbondedCutoff=1*unit.nanometer,
                                      constraints=app.HBonds) # create system
+    # define custom force to restrain atoms
+    force = mm.CustomExternalForce("k*periodicdistance(x, y, z, x0, y0, z0)^2")
+    force.addGlobalParameter("k", 5.0 * unit.kilocalories_per_mole / unit.angstroms ** 2)
+    force.addPerParticleParameter("x0")
+    force.addPerParticleParameter("y0")
+    force.addPerParticleParameter("z0")
+    # protein heavy atom restrain
+    if restrain_heavy_atoms:
+        for index, atom in enumerate(modeller.topology.atoms()):
+            if atom.residue.name not in non_protein_resnames:
+                if atom.element is not None:
+                    if atom.element.name is not 'hydrogen':
+                        force.addParticle(index, modeller.positions[index].value_in_unit(unit.nanometers))
+        system.addForce(force)
+    # custom atom restrains
     if len(restrain_ids) > 0:
-        # define custom force to restrain atoms
-        force = mm.CustomExternalForce("k*periodicdistance(x, y, z, x0, y0, z0)^2")
-        force.addGlobalParameter("k", 5.0*unit.kilocalories_per_mole/unit.angstroms**2)
-        force.addPerParticleParameter("x0")
-        force.addPerParticleParameter("y0")
-        force.addPerParticleParameter("z0")
-        # add restrain to atoms
         for index in restrain_ids:
             force.addParticle(index, modeller.positions[index].value_in_unit(unit.nanometers))
         system.addForce(force)
