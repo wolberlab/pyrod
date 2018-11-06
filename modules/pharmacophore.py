@@ -142,8 +142,8 @@ def features_generator(positions, feature_scores, feature_name, features_per_fea
 
 def library_generator(pharmacophore_path, library_dict, library_path, make_mandatory, pyrod_pharmacophore):
     super_pharmacophore, pharmacophore_library = [], []
-    essential_hb_features, essential_hi_features, essential_ai_features, essential_ii_features = [], [], [], []
-    optional_hb_features, optional_hi_features, optional_ai_features, optional_ii_features = [], [], [], []
+    essential_hb, essential_hi, essential_ai, essential_ii = [], [], [], []
+    optional_hb, optional_hi, optional_ai, optional_ii = [], [], [], []
     exclusion_volumes = []
     tree = et.parse(pharmacophore_path)
     if tree.getroot().tag == 'pharmacophore':
@@ -173,53 +173,59 @@ def library_generator(pharmacophore_path, library_dict, library_path, make_manda
         else:
             if feature.attrib['name'] in ['HBD', 'HBA']:
                 if feature.attrib['optional'] == 'true':
-                    optional_hb_features.append(index)
+                    optional_hb.append(index)
                 else:
-                    essential_hb_features.append(index)
+                    essential_hb.append(index)
             elif feature.attrib['name'] == 'H':
                 if feature.attrib['optional'] == 'true':
-                    optional_hi_features.append(index)
+                    optional_hi.append(index)
                 else:
-                    essential_hi_features.append(index)
+                    essential_hi.append(index)
             elif feature.attrib['name'] in ['PI', 'NI']:
                 if feature.attrib['optional'] == 'true':
-                    optional_ii_features.append(index)
+                    optional_ii.append(index)
                 else:
-                    essential_ii_features.append(index)
+                    essential_ii.append(index)
             elif feature.attrib['name'] == 'AR':
                 if feature.attrib['optional'] == 'true':
-                    optional_ai_features.append(index)
+                    optional_ai.append(index)
                 else:
-                    essential_ai_features.append(index)
+                    essential_ai.append(index)
+    # check if library parameters violate combination rules
+    if library_dict['minimal hydrogen bonds'] - len(essential_hb) < 0:
+        library_dict['minimal hydrogen bonds'] = len(essential_hb)
+    if library_dict['minimal hydrophobic interactions'] - len(essential_hi) < 0:
+        library_dict['minimal hydrophobic interactions'] = len(essential_hi)
+    if library_dict['minimal ionizable interactions'] - len(essential_ii) < 0:
+        library_dict['minimal ionizable interactions'] = len(essential_ii)
+    if library_dict['minimal aromatic interactions'] - len(essential_ai) < 0:
+        library_dict['minimal aromatic interactions'] = len(essential_ai)
     # generating pharmacophore library
-    for hbs in [combinations(optional_hb_features, x) for x in
-                range(library_dict['minimal hydrogen bonds'] - len(essential_hb_features),
-                      library_dict['maximal hydrogen bonds'] - len(essential_hb_features) + 1)]:
+    for hbs in [combinations(optional_hb, x) for x in
+                range(library_dict['minimal hydrogen bonds'] - len(essential_hb),
+                      library_dict['maximal hydrogen bonds'] + 1)]:
         for hbs_ in hbs:
-            for his in [combinations(optional_hi_features, x) for x in
-                        range(library_dict['minimal hydrophobic interactions'] - len(essential_hi_features),
-                              library_dict['maximal hydrophobic interactions'] - len(essential_hi_features) + 1)]:
+            for his in [combinations(optional_hi, x) for x in
+                        range(library_dict['minimal hydrophobic interactions'] - len(essential_hi),
+                              library_dict['maximal hydrophobic interactions'] + 1)]:
                 for his_ in his:
-                    for ais in [combinations(optional_ai_features, x) for x in
-                                range(library_dict['minimal aromatic interactions'] - len(essential_ai_features),
-                                      library_dict['maximal aromatic interactions'] - len(essential_ai_features) + 1)]:
+                    for ais in [combinations(optional_ai, x) for x in
+                                range(library_dict['minimal aromatic interactions'] - len(essential_ai),
+                                      library_dict['maximal aromatic interactions'] + 1)]:
                         for ais_ in ais:
-                            for iis in [combinations(optional_ii_features, x) for x in
-                                        range(library_dict['minimal ionizable interactions'] -
-                                              len(essential_ii_features),
-                                              library_dict['maximal ionizable interactions'] -
-                                              len(essential_ii_features) + 1)]:
+                            for iis in [combinations(optional_ii, x) for x in
+                                        range(library_dict['minimal ionizable interactions'] - len(essential_ii),
+                                              library_dict['maximal ionizable interactions'] + 1)]:
                                 for iis_ in iis:
-                                    pharmacophore = (essential_hb_features + list(hbs_) +
-                                                     essential_hi_features + list(his_) +
-                                                     essential_ai_features + list(ais_) +
-                                                     essential_ii_features + list(iis_))
-                                    if evaluate_pharmacophore(pharmacophore, super_pharmacophore,
-                                                              library_dict['minimal features'],
-                                                              library_dict['maximal features'], pyrod_pharmacophore):
+                                    pharmacophore = (essential_hb + list(hbs_) +
+                                                     essential_hi + list(his_) +
+                                                     essential_ai + list(ais_) +
+                                                     essential_ii + list(iis_))
+                                    if evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict,
+                                                              pyrod_pharmacophore):
                                         pharmacophore_library.append(pharmacophore)
-    feature_indices = (essential_hb_features + essential_hi_features + essential_ii_features + essential_ai_features +
-                       optional_hb_features + optional_hi_features + optional_ii_features + optional_ai_features)
+    feature_indices = (essential_hb + essential_hi + essential_ii + essential_ai +
+                       optional_hb + optional_hi + optional_ii + optional_ai)
     # generate pharmacophore template for pharmacophore writing
     pharmacophore_template = et.Element('pharmacophore', attrib={'name': 'template',
                                         'pharmacophoreType': 'LIGAND_SCOUT'})
