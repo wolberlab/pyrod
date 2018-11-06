@@ -10,6 +10,7 @@ current_file = 0
 actives = '/path/to/actives.ldb'
 decoys = '/path/to/decoys.ldb'
 directory = '/path/to/pharmacophore/library'
+output_file_name = 'enrichment_factors.txt'
 minimum_of_actives = 5  # minimum actives to be found to run a roc curve analysis in percent
 
 
@@ -107,7 +108,7 @@ def suppress_stdout():
 
 number_of_actives = 0
 header = ['pharmacophore', 'EF1', 'EF5', 'EF10', 'EF100', 'number of active hits', 'active hits indices']
-with open('/'.join([directory, 'enrichment_factors.txt']), 'w') as result_file:
+with open('/'.join([directory, output_file_name]), 'w') as result_file:
     result_file.write('\t'.join(header) + '\n')
     while current_file <= last_file:
         sys.stdout.write('\rAnalyzing pharmacophore {} of {}.'.format(current_file, last_file))
