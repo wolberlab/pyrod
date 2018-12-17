@@ -135,5 +135,5 @@ def dmif_excess_parameters(config):
         dmif2_name = 'dmif2'
     map_formats = []
     if len(config.get('dmif excess parameters', 'map formats')) > 0:
-        map_formats = [x.strip() for x in config.get('dmif parameters', 'map formats').split(',')]
+        map_formats = [x.strip() for x in config.get('dmif excess parameters', 'map formats').split(',')]
     return [dmif1_path, dmif2_path, dmif1_name, dmif2_name, map_formats]
