@@ -168,9 +168,9 @@ if __name__ == '__main__':
         update_user('Writing dmif excess maps to {0}/{1}_excess and {0}/{2}_excess.'.format(directory,
                     dmif1_name, dmif2_name), logger)
         for map_format in map_formats:
-            for feature_name in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
+            for feature_name in [x for x in dmif1_excess.dtype.names if x not in ['x', 'y', 'z']]:
                 dmif_writer(dmif1_excess, feature_name, file_format=map_format, name=feature_name,
-                            directory='{{}/{}_excess'.format(directory, dmif1_name))
+                            directory='{}/{}_excess'.format(directory, dmif1_name))
                 dmif_writer(dmif2_excess, feature_name, file_format=map_format, name=feature_name,
-                            directory='{{}/{}_excess'.format(directory, dmif2_name))
+                            directory='{}/{}_excess'.format(directory, dmif2_name))
     update_user('Finished after {}.'.format(time_to_text(time.time() - start_time)), logger)

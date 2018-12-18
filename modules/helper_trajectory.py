@@ -376,7 +376,7 @@ def generate_dmif_excess(dmif1_path, dmif2_path):
         dmif1 = pickle.load(file)
     with open(dmif2_path, 'rb') as file:
         dmif2 = pickle.load(file)
-    if np.array([dmif1['x'], dmif1['y'], dmif1['z']]) == np.array([dmif2['x'], dmif2['y'], dmif2['z']]):
+    if np.array_equal(np.array([dmif1['x'], dmif1['y'], dmif1['z']]), np.array([dmif2['x'], dmif2['y'], dmif2['z']])):
         dmif1_excess = copy.deepcopy(dmif1)
         dmif2_excess = copy.deepcopy(dmif2)
         for feature_name in feature_names:
