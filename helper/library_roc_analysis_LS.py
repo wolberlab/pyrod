@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import contextlib
-import operator
+import math
+import numpy as np
 import os
 import subprocess
 import sys
@@ -60,25 +61,58 @@ def sdf_parser(sdf_path, molecule_count_only=False):
             return [sorted(actives_scores), sorted(decoys_scores), sorted(actives_indices)]
 
 
-def enrichment_factor(actives_scores, decoys_scores, number_of_actives, number_of_decoys, ef_top):
+def auc_step(fp, auc_tp_step, number_of_actives, number_of_decoys, fraction):
+    auc_fp_size = (fraction - (fp / number_of_decoys))
+    if auc_fp_size < 0:
+        return 0
+    else:
+        return auc_fp_size * (auc_tp_step / number_of_actives)
+
+
+def area_under_the_curve(actives_scores, decoys_scores, number_of_actives, number_of_decoys, fraction):
     tp, fp = 0, 0
+    auc_collector = 0
     while len(actives_scores + decoys_scores) > 0:
-        if fp + tp >= (number_of_actives + number_of_decoys) * ef_top:
+        if tp >= number_of_actives * fraction:
             break
         if len(actives_scores) > 0:
+            auc_tp_step = 1
+            if tp + 1 > number_of_actives * fraction:
+                auc_tp_step = (number_of_actives * fraction) - tp
             if len(decoys_scores) > 0:
-                if actives_scores[-1] >= decoys_scores[-1]:
+                if actives_scores[-1] > decoys_scores[-1]:
+                    auc_collector += auc_step(fp, auc_tp_step, number_of_actives, number_of_decoys, fraction)
                     tp += 1
                     actives_scores = actives_scores[:-1]
-                elif actives_scores[-1] <= decoys_scores[-1]:
+                else:
                     fp += 1
                     decoys_scores = decoys_scores[:-1]
             else:
                 tp += 1
                 actives_scores = actives_scores[:-1]
+                auc_collector += auc_step(fp, auc_tp_step, number_of_actives, number_of_decoys, fraction)
         else:
             fp += 1
             decoys_scores = decoys_scores[:-1]
+    while tp < number_of_actives * fraction:
+        auc_tp_step = 1
+        if tp + 1 > number_of_actives * fraction:
+            auc_tp_step = (number_of_actives * fraction) - tp
+        tp += 1
+        if tp == number_of_actives:
+            fp = number_of_decoys
+        else:
+            fp += (number_of_decoys - fp) / (number_of_actives - tp)
+        auc_collector += auc_step(fp, auc_tp_step, number_of_actives, number_of_decoys, fraction)
+    return round(auc_collector / (fraction ** 2), 2)
+
+
+def enrichment_factor(score_array, number_of_actives, number_of_decoys, fraction):
+    absolute_fraction = int(math.ceil((number_of_actives + number_of_decoys) * fraction))
+    tp = score_array[: absolute_fraction, 1].sum()
+    fp = absolute_fraction - tp
+    if absolute_fraction > len(score_array):
+        fp = len(score_array) - tp
     return round((tp / (tp + fp)) / (number_of_actives / (number_of_actives + number_of_decoys)), 1)
 
 
@@ -87,11 +121,17 @@ def roc_analyzer(current_file, directory, number_of_actives, number_of_decoys):
     if sdf_parser('.'.join([file_name, 'sdf']), True) == 0:
         return None
     actives_scores, decoys_scores, actives_indices = sdf_parser('.'.join([file_name, 'sdf']))
+    score_array = np.vstack((np.array([[x, 1] for x in actives_scores]), np.array([[x, 0] for x in decoys_scores])))
+    score_array = score_array[np.flipud(score_array[:, 0].argsort())]
     EFs = []
-    for EF in [0.01, 0.05, 0.1, 1]:
-        EFs.append(str(enrichment_factor(actives_scores, decoys_scores, number_of_actives, number_of_decoys, EF)))
-    result = [str(current_file)] + EFs + [str(len(actives_scores))] + [str(actives_indices)]
-    print('\rPharmacophore {0}: EF1={1} EF5={2} EF10={3} EF100={4} actives={5}'.format(*result[:-1]))
+    AUCs = []
+    for fraction in [0.01, 0.05, 0.1, 1]:
+        EFs.append(str(enrichment_factor(score_array, number_of_actives, number_of_decoys, fraction)))
+        AUCs.append(str(area_under_the_curve(actives_scores, decoys_scores, number_of_actives, number_of_decoys,
+                                             fraction)))
+    actives_rate = round((len(actives_scores) / number_of_actives) * 100, 1)
+    result = [str(current_file)] + EFs + AUCs + [str(actives_rate)] + [str(actives_indices)]
+    print('\rPharmacophore {0}: EF1={1} EF10={3} AUC10={7} AUC100={8} Actives={9}%'.format(*result[:-1]))
     return result
 
 
@@ -107,7 +147,8 @@ def suppress_stdout():
 
 
 number_of_actives = 0
-header = ['pharmacophore', 'EF1', 'EF5', 'EF10', 'EF100', 'number of active hits', 'active hits indices']
+header = ['Pharmacophore', 'EF1', 'EF5', 'EF10', 'EF100', 'AUC1', 'AUC5', 'AUC10', 'AUC100', 'Actives [%]',
+          'Actives Indices']
 with open('/'.join([directory, output_file_name]), 'w') as result_file:
     result_file.write('\t'.join(header) + '\n')
     while current_file <= last_file:

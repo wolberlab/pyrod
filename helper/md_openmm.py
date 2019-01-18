@@ -9,7 +9,7 @@ directory = '/path/to/directory'  # location of pdb file
 passed_mds = 0  # number of mds that have been already generated
 number_mds = 10  # number of mds that should be generated
 md_length = 10  # length of md in nano seconds
-forcefield = 'amber14-all.xml'
+main_forcefield = 'amber14-all.xml'
 water_model = 'amber14/tip4pew.xml'
 
 # restrain protein heavy atoms
@@ -26,7 +26,7 @@ directory = directory + '/'
 # create solvated system
 if passed_mds == 0:
     pdb = app.PDBFile(directory + pdb_file + '.pdb') # load pdb
-    forcefield_solvate = app.ForceField(forcefield, water_model_solvate) # specify forcefield and water model
+    forcefield_solvate = app.ForceField(main_forcefield, water_model_solvate) # specify forcefield and water model
     modeller = app.Modeller(pdb.topology, pdb.positions) # initiate system
     # add water
     modeller.addSolvent(forcefield_solvate, padding=1.5*unit.nanometers, model='tip3p', ionicStrength=0.15*unit.molar)
@@ -37,9 +37,10 @@ if passed_mds == 0:
     os.mkdir(directory + 'mds_prep')
 # setup solvated system
 pdb = app.PDBFile(directory + pdb_file + '_solvated.pdb') # load pdb of solvated system
-forcefield = app.ForceField(forcefield, water_model) # specify forcefield and water model
+forcefield = app.ForceField(main_forcefield, water_model) # specify forcefield and water model
 modeller = app.Modeller(pdb.topology, pdb.positions) # initiate system
 modeller.addExtraParticles(forcefield)
+app.PDBFile.writeFile(modeller.topology, modeller.positions, open(directory + '/mds/0.pdb', 'w'))
 # run mds
 for counter in range(passed_mds, number_mds):
     system = forcefield.createSystem(modeller.topology, nonbondedMethod=app.PME, nonbondedCutoff=1*unit.nanometer,
@@ -72,7 +73,5 @@ for counter in range(passed_mds, number_mds):
                                                 enforcePeriodicBox=False))
     simulation.reporters.append(app.StateDataReporter(stdout, 2500, step=True, potentialEnergy=True, temperature=True,
                                                       speed=True))
-    simulation.step(5000000)
     simulation.step((md_length * 1000000) / 2.0)
-    os.system("vmd -f {0}_solvated.pdb mds/{1}.dcd -dispdev text -e md_prep.tcl -eofexit -args {1}".format(pdb_file,
-                                                                                                           counter))
+    os.system("vmd -f mds/{0}.pdb mds/{0}.dcd -dispdev text -e md_prep.tcl -eofexit -args {0}".format(counter))
