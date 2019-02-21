@@ -28,12 +28,12 @@ except ImportError:
     from modules.helper_update import update_user
 
 
-def file_path(name, path):
+def file_path(name, directory):
     """ This function creates the path to a file. If the file already exists it will be deleted. """
-    if not os.path.isdir(path):
-        os.makedirs(path)
-    if os.path.exists('/'.join([path, name])):
-        os.remove('/'.join([path, name]))
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    if os.path.exists('/'.join([directory, name])):
+        os.remove('/'.join([directory, name]))
     return
 
 

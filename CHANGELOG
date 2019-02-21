@@ -1,3 +1,6 @@
+* v0.7.3
+ - added centroid feature
+ - minor changes
 * v0.7.2
  - fixed bugs in helper files
  - fixed error in dmif excess

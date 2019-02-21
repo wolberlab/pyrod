@@ -31,7 +31,6 @@ def trajectory_analysis_parameters(config):
     edge_lengths = [int(x.strip()) for x in config.get('trajectory analysis parameters', 'edge lengths').split(',')]
     topology = config.get('trajectory analysis parameters', 'topology')
     trajectories = [x.strip() for x in config.get('trajectory analysis parameters', 'trajectories').split(',')]
-    traj_number = len(trajectories)
     first_frame = 0
     if len(config.get('trajectory analysis parameters', 'first frame')) > 0:
         first_frame = int(config.get('trajectory analysis parameters', 'first frame')) - 1
@@ -53,8 +52,8 @@ def trajectory_analysis_parameters(config):
     if config.has_option('trajectory analysis parameters', 'dmifs only'):
         if config.get('trajectory analysis parameters', 'dmifs only') == 'true':
             get_partners = False
-    return [center, edge_lengths, topology, trajectories, traj_number, first_frame, last_frame, length, metal_names,
-            map_formats, mp, get_partners]
+    return [center, edge_lengths, topology, trajectories, first_frame, last_frame, length, metal_names, map_formats,
+            mp, get_partners]
 
 
 def exclusion_volume_parameters(config):
@@ -102,7 +101,7 @@ def pharmacophore_parameters(config):
             ais_number]
 
 
-def library_parameters(config, path):
+def library_parameters(config, directory):
     pharmacophore_path = config.get('library parameters', 'pharmacophore path')
     library_dict = {}
     for parameter in ['minimal features', 'maximal features', 'minimal hydrogen bonds', 'maximal hydrogen bonds',
@@ -117,7 +116,7 @@ def library_parameters(config, path):
         library_name = config.get('library parameters', 'library name')
     else:
         library_name = 'library'
-    library_path = '/'.join([path, library_name])
+    library_path = '/'.join([directory, library_name])
     pyrod_pharmacophore = True
     if config.get('library parameters', 'pyrod pharmacophore') == 'false':
         pyrod_pharmacophore = False
@@ -137,3 +136,23 @@ def dmif_excess_parameters(config):
     if len(config.get('dmif excess parameters', 'map formats')) > 0:
         map_formats = [x.strip() for x in config.get('dmif excess parameters', 'map formats').split(',')]
     return [dmif1_path, dmif2_path, dmif1_name, dmif2_name, map_formats]
+
+
+def centroid_parameters(config):
+    ligand = config.get('centroid parameters', 'ligand')
+    pharmacophore = config.get('centroid parameters', 'pharmacophore')
+    topology = config.get('centroid parameters', 'topology')
+    trajectories = [x.strip() for x in config.get('centroid parameters', 'trajectories').split(',')]
+    first_frame = 0
+    if len(config.get('centroid parameters', 'first frame')) > 0:
+        first_frame = int(config.get('centroid parameters', 'first frame')) - 1
+    last_frame = None
+    if len(config.get('centroid parameters', 'last frame')) > 0:
+        last_frame = int(config.get('centroid parameters', 'last frame'))
+    metal_names = [x.strip() for x in config.get('centroid parameters', 'metal names').split(',')]
+    if len(config.get('centroid parameters', 'output name')) > 0:
+        output_name = config.get('centroid parameters', 'output name')
+    else:
+        output_name = 'centroid'
+    mp = int(config.get('centroid parameters', 'number of processes'))
+    return [ligand, pharmacophore, topology, trajectories, first_frame, last_frame, metal_names, output_name, mp]

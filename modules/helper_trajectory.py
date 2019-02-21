@@ -127,7 +127,7 @@ def hd_selection(main_atoms):
                 atomids.append(atom['atomid'])
                 types.append(atom['type'])
                 hydrogen_atomid_lists += [hydrogen_atomids]
-    return atomids, types, hydrogen_atomid_lists
+    return np.array(atomids), np.array(types), hydrogen_atomid_lists
 
 
 def ha_selection(main_atoms):
@@ -152,7 +152,7 @@ def ha_selection(main_atoms):
         if ha:
             atomids.append(atom['atomid'])
             types.append(atom['type'])
-    return atomids, types
+    return np.array(atomids), np.array(types)
 
 
 def hi_selection(main_atoms):
@@ -172,7 +172,7 @@ def hi_selection(main_atoms):
                         hi = True
         if hi:
             atomids.append(atom['atomid'])
-    return atomids
+    return np.array(atomids)
 
 
 def ni_selection(main_atoms):
@@ -200,7 +200,7 @@ def ni_selection(main_atoms):
                         atomids += indices_tmp
                         if len(ni_sel_dict[resname][group_counter][0]) == 1:
                             atomids += indices_tmp
-    return atomids
+    return np.array(atomids)
 
 
 def pi_selection(main_atoms):
@@ -228,7 +228,7 @@ def pi_selection(main_atoms):
                         atomids += indices_tmp
                         if len(pi_sel_dict[resname][group_counter][0]) == 1:
                             atomids += indices_tmp
-    return atomids
+    return np.array(atomids)
 
 
 def ai_selection(main_atoms):
@@ -252,7 +252,7 @@ def ai_selection(main_atoms):
                             indices_tmp.append(index[0])
                     if len(indices_tmp) == len(ai_sel_dict[resname][group_counter]):
                         atomids += indices_tmp
-    return atomids
+    return np.array(atomids)
 
 
 def metal_selection(topology, metal_names):
@@ -260,7 +260,7 @@ def metal_selection(topology, metal_names):
     atomids = []
     for metal_name in metal_names:
         atomids += list(topology[topology['name'] == metal_name]['atomid'])
-    return atomids
+    return np.array(atomids)
 
 
 def position_angle_test(position_to_test, center_position, positions, cutoff):

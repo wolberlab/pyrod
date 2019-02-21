@@ -11,35 +11,36 @@ import multiprocessing
 import numpy as np
 import os
 import time
+import warnings
 
 # pyrod modules
 try:
-    from pyrod.modules.trajectory import trajectory_analysis
     from pyrod.modules.helper_config import test_grid_parameters, trajectory_analysis_parameters, \
         exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters, \
-        dmif_excess_parameters
-    from pyrod.modules.helper_trajectory import grid_generator, dmif_data_structure, post_processing, \
-        generate_dmif_excess
+        dmif_excess_parameters, centroid_parameters
     from pyrod.modules.helper_pharmacophore import features_processing, select_features
     from pyrod.modules.helper_read import pickle_reader
+    from pyrod.modules.helper_trajectory import grid_generator, dmif_data_structure, post_processing, \
+        generate_dmif_excess
     from pyrod.modules.helper_update import update_user, time_to_text
     from pyrod.modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger
     from pyrod.modules.lookup import logo, __version__, grid_list_dict, help_description, feature_names
     from pyrod.modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
+    from pyrod.modules.trajectory import trajectory_analysis, screen_protein_conformations, ensembles_to_centroid
 except ImportError:
-    from modules.trajectory import trajectory_analysis
     from modules.helper_config import test_grid_parameters, trajectory_analysis_parameters, \
         exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters, \
-        dmif_excess_parameters
-    from modules.helper_trajectory import grid_generator, dmif_data_structure, post_processing, generate_dmif_excess
+        dmif_excess_parameters, centroid_parameters
     from modules.helper_pharmacophore import features_processing, select_features
     from modules.helper_read import pickle_reader
+    from modules.helper_trajectory import grid_generator, dmif_data_structure, post_processing, generate_dmif_excess
     from modules.helper_update import update_user, time_to_text
     from modules.helper_write import file_path, pdb_writer, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger
     from modules.lookup import logo, __version__, grid_list_dict, help_description, feature_names
     from modules.pharmacophore import exclusion_volume_generator, features_generator, library_generator
+    from modules.trajectory import trajectory_analysis, screen_protein_conformations, ensembles_to_centroid
 
 
 if __name__ == '__main__':
@@ -79,15 +80,15 @@ if __name__ == '__main__':
     if config.has_section('trajectory analysis parameters'):
         update_user('Starting trajectory analysis.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('trajectory analysis parameters')]))
-        center, edge_lengths, topology, trajectories, traj_number, first_frame, last_frame, length, metal_names, \
-            map_formats, mp, get_partners = trajectory_analysis_parameters(config)
+        center, edge_lengths, topology, trajectories, first_frame, last_frame, length, metal_names, map_formats, \
+            mp, get_partners = trajectory_analysis_parameters(config)
         update_user('Initializing grid.', logger)
         grid_score, grid_partners = dmif_data_structure(grid_generator(center, edge_lengths), get_partners)
-        args = [(topology, trajectory, counter, length, mp, traj_number, grid_score, grid_partners, first_frame,
+        args = [(topology, trajectory, counter, length, mp, len(trajectories), grid_score, grid_partners, first_frame,
                  last_frame, metal_names, directory, debugging, get_partners) for counter, trajectory in
                 enumerate(trajectories)]
-        if traj_number > 1:
-            update_user('Analyzing {} trajectories.'.format(traj_number), logger)
+        if len(trajectories) > 1:
+            update_user('Analyzing {} trajectories.'.format(len(trajectories)), logger)
         else:
             update_user('Analyzing 1 trajectory.', logger)
         p = multiprocessing.Pool(processes=mp)
@@ -95,7 +96,7 @@ if __name__ == '__main__':
         p.close()
         p.join()
         update_user('Processing results.', logger)
-        dmif, partners = post_processing(results, traj_number, length)
+        dmif, partners = post_processing(results, len(trajectories), length)
         results = None
         pickle_writer(dmif, 'dmif', '/'.join([directory, 'data']), logger)
         if get_partners:
@@ -173,4 +174,27 @@ if __name__ == '__main__':
                             directory='{}/{}_excess'.format(directory, dmif1_name))
                 dmif_writer(dmif2_excess, feature_name, file_format=map_format, name=feature_name,
                             directory='{}/{}_excess'.format(directory, dmif2_name))
+    # centroid generation
+    if config.has_section('centroid parameters'):
+        update_user('Starting screening of protein conformations.', logger)
+        logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('centroid parameters')]))
+        ligand, pharmacophore, topology, trajectories, first_frame, last_frame, metal_names, output_name, mp = \
+            centroid_parameters(config)
+        args = [(topology, trajectory, pharmacophore, ligand, counter, first_frame, last_frame, metal_names,
+                directory, output_name, debugging) for counter, trajectory in enumerate(trajectories)]
+        if len(trajectories) > 1:
+            update_user('Analyzing {} trajectories.'.format(len(trajectories)), logger)
+        else:
+            update_user('Analyzing 1 trajectory.', logger)
+        p = multiprocessing.Pool(processes=mp)
+        results = p.starmap(screen_protein_conformations, args, chunksize=1)
+        p.close()
+        p.join()
+        if debugging:
+            ensembles_to_centroid(topology, trajectories, output_name, directory, debugging)
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                ensembles_to_centroid(topology, trajectories, output_name, directory, debugging)
+        update_user('Output written to {0}.'.format('/'.join([directory, output_name])), logger)
     update_user('Finished after {}.'.format(time_to_text(time.time() - start_time)), logger)

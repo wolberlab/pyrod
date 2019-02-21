@@ -74,4 +74,4 @@ for counter in range(passed_mds, number_mds):
     simulation.reporters.append(app.StateDataReporter(stdout, 2500, step=True, potentialEnergy=True, temperature=True,
                                                       speed=True))
     simulation.step((md_length * 1000000) / 2.0)
-    os.system("vmd -f mds/{0}.pdb mds/{0}.dcd -dispdev text -e md_prep.tcl -eofexit -args {0}".format(counter))
+    os.system("vmd -f mds/0.pdb mds/{0}.dcd -dispdev text -e md_prep.tcl -eofexit -args {0}".format(counter))
