@@ -517,19 +517,19 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                         break
                     else:
                         matched_features += 1
-                if matched_features == len(features):
-                    clash = False
-                    main_positions = positions[main_atomids]
-                    if cdist(main_positions, np.array([list(feature[['x', 'y', 'z']]) for feature in
-                                                       features])).min() < CLASH_CUTOFF:
+            if matched_features == len(features):
+                clash = False
+                main_positions = positions[main_atomids]
+                if cdist(main_positions, np.array([list(feature[['x', 'y', 'z']]) for feature in
+                                                   features])).min() < CLASH_CUTOFF:
+                    clash = True
+                if ligand_path:
+                    if cdist(main_positions, ligand_positions).min() < CLASH_CUTOFF:
                         clash = True
-                    if ligand_path:
-                        if cdist(main_positions, ligand_positions).min() < CLASH_CUTOFF:
-                            clash = True
-                    if not clash:
-                        DCD.write(protein)
-                        frame_collector.append(frame + first_frame)
-                logger.debug('Trajectory {} finished with frame {}.'.format(counter, frame))
+                if not clash:
+                    DCD.write(protein)
+                    frame_collector.append(frame + first_frame)
+            logger.debug('Trajectory {} finished with frame {}.'.format(counter, frame))
     logger.info('Finished screening of trajectory {}.'.format(counter))
     with open('{}/frames_{}.csv'.format(output_directory, counter), 'w') as csv:
         for frame in frame_collector:
