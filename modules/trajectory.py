@@ -519,8 +519,11 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                         matched_features += 1
                 if matched_features == len(features):
                     clash = False
+                    main_positions = positions[main_atomids]
+                    if cdist(main_positions, np.array([list(feature[['x', 'y', 'z']]) for feature in
+                                                       features])).min() < CLASH_CUTOFF:
+                        clash = True
                     if ligand_path:
-                        main_positions = positions[main_atomids]
                         if cdist(main_positions, ligand_positions).min() < CLASH_CUTOFF:
                             clash = True
                     if not clash:
