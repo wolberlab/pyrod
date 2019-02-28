@@ -82,6 +82,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
         hd2_inds = []
         hda_inds = []
         tw_inds = []
+        h2o_inds = []
         positions = u.atoms.positions
         h2os_os_box_inds = topology[((topology['resname'] == 'HOH') & (topology['name'] == 'O') &
                                     (positions[:, 0] >= x_minimum) & (positions[:, 0] <= x_maximum) &
@@ -172,6 +173,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                 ni += 2.6 / distance(o_coor, metal_position)
             # indices of points close to water
             inds = tree.query_ball_point(o_coor, r=1.41)
+            h2o_inds += inds
             # trapped water molecules
             if hd + ha > 2:
                 tw_inds += inds
@@ -307,6 +309,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
         grid_score['hd2'][hd2_inds] += 1
         grid_score['hda'][hda_inds] += 1
         grid_score['tw'][tw_inds] += 1
+        grid_score['h2o'][h2o_inds] += 1
         if check_progress:
             update_progress_dmif(counter, frame, length_trajectory, number_trajectories, number_processes, past_frames,
                                  future_frames, start, final)
