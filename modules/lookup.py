@@ -374,7 +374,7 @@ grid_score_dict = {'x': 0, 'y': 1, 'z': 2, 'shape': 3, 'ha': 4, 'hd': 5, 'ha2': 
                    'pi': 10, 'hi': 11, 'hi_norm': 12, 'ai': 13, 'tw': 14, 'h2o': 15}
 grid_list_dict = {'ha': 0, 'hd': 1, 'ha2': 2, 'hd2': 3, 'hda': 4, 'ai': 5}
 feature_names = ('ha', 'hd', 'ai', 'ha2', 'hd2', 'hda', 'hi', 'pi', 'ni')
-__version__ = '0.7.3'  # PyRod version
+__version__ = '0.7.2'  # PyRod version
 terminal_width = shutil.get_terminal_size()[0]
 logo = ('',
         '{:^{width}}'.format('                 |X|                   ', width=terminal_width),

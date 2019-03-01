@@ -1,10 +1,9 @@
-* v0.7.3
+* v0.7.2
  - added h2o dmif
  - added centroid feature
- - minor changes
-* v0.7.2
  - fixed bugs in helper files
  - fixed error in dmif excess
+ - minor changes
 * v0.7.1
  - improved library generation
  - improved exclusion volume generation
