@@ -169,7 +169,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
             for metal_ind in metal_list:
                 metal_position = metal_positions[metal_ind]
                 ha += 1
-                ha_i.append(metal_position)
+                ha_i.append([float(x) for x in metal_position])
                 ni += 2.6 / distance(o_coor, metal_position)
             # indices of points close to water
             inds = tree.query_ball_point(o_coor, r=1.41)
