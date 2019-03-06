@@ -30,8 +30,10 @@ except ImportError:
 
 def file_path(name, directory):
     """ This function creates the path to a file. If the file already exists it will be deleted. """
-    if not os.path.isdir(directory):
+    try:
         os.makedirs(directory)
+    except FileExistsError:
+        pass
     if os.path.exists('/'.join([directory, name])):
         os.remove('/'.join([directory, name]))
     return
