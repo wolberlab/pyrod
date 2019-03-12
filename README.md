@@ -35,5 +35,7 @@ source activate pyrod
 ```bash
 pyrod /path/to/pyrod_config_file.cfg
 ```
+## Example
+An example jupyter notebook for visualization of dmifs using nglview is provided in the example directory.
 ## License Information
 PyRod is published under GNU General Public License v2.0. For more information read LICENSE.
