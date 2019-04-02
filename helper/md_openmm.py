@@ -11,6 +11,7 @@ number_mds = 10  # number of mds that should be generated
 md_length = 10  # length of md in nano seconds
 main_forcefield = 'amber14-all.xml'
 water_model = 'amber14/tip4pew.xml'
+VMD = '/software/vmd/vmd-1.9.3/vmd'  # path to vmd executable
 
 # restrain protein heavy atoms
 restrain_heavy_atoms = False
@@ -22,6 +23,30 @@ restrain_ids = []
 # internals
 water_model_solvate = 'amber14/tip3p.xml'
 directory = directory + '/'
+
+# create tcl-file for vmd conversion
+with open(directory + '/md_conversion.tcl', 'w') as file:
+    file.write(
+        'package require pbctools\n' +
+         'pbc wrap -centersel protein -center com -compound res -all\n' +
+         'proc fitframes { molid seltext } {\n' +
+         '  set ref [atomselect \$molid \$seltext frame 0]\n' +
+         '  set sel [atomselect \$molid \$seltext]\n' +
+         '  set all [atomselect \$molid all]\n' +
+         '  set n [molinfo \$molid get numframes]\n' +
+         '\n' +
+         '  for { set i 1 } { \$i < \$n } { incr i } {\n' +
+         '    \$sel frame \$i\n' +
+         '    \$all frame \$i\n' +
+         '    \$all move [measure fit \$sel \$ref]\n' +
+         '  }\n' +
+         '  return\n' +
+         '}\n' +
+         'fitframes top backbone\n' +
+         'animate write pdb mds_prep/\$argv.pdb beg 0 end 0\n' +
+         'animate write dcd mds_prep/\$argv.dcd beg 1 end -1\n' +
+         'quit\n'
+        )
 
 # create solvated system
 if passed_mds == 0:
@@ -74,4 +99,5 @@ for counter in range(passed_mds, number_mds):
     simulation.reporters.append(app.StateDataReporter(stdout, 2500, step=True, potentialEnergy=True, temperature=True,
                                                       speed=True))
     simulation.step((md_length * 1000000) / 2.0)
-    os.system("vmd -f mds/0.pdb mds/{0}.dcd -dispdev text -e md_prep.tcl -eofexit -args {0}".format(counter))
+    os.system("{} -f mds/0.pdb mds/{0}.dcd -dispdev text -e md_conversion.tcl -eofexit -args {0}".format(VMD, counter))
+os.remove(directory + '/md_conversion.tcl')

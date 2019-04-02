@@ -12,11 +12,11 @@ import MDAnalysis as mda
 
 # pyrod modules
 try:
-    from pyrod.modules.helper_update import update_user
-    from pyrod.modules.lookup import feature_names
+    from pyrod.pyrod_lib.lookup import feature_types
+    from pyrod.pyrod_lib.write import update_user
 except ImportError:
-    from modules.helper_update import update_user
-    from modules.lookup import feature_names
+    from pyrod_lib.lookup import feature_types
+    from pyrod_lib.write import update_user
 
 
 def test_grid_parameters(config):
@@ -40,20 +40,20 @@ def trajectory_analysis_parameters(config):
     if last_frame is None:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            length = len(mda.Universe(trajectories[0]).trajectory) - first_frame
+            total_number_of_frames = (len(mda.Universe(trajectories[0]).trajectory) - first_frame) * len(trajectories)
     else:
-        length = last_frame - first_frame
+        total_number_of_frames = (last_frame - first_frame) * len(trajectories)
     metal_names = [x.strip() for x in config.get('trajectory analysis parameters', 'metal names').split(',')]
     map_formats = []
     if len(config.get('trajectory analysis parameters', 'map formats')) > 0:
         map_formats = [x.strip() for x in config.get('trajectory analysis parameters', 'map formats').split(',')]
-    mp = int(config.get('trajectory analysis parameters', 'number of processes'))
+    number_of_processes = int(config.get('trajectory analysis parameters', 'number of processes'))
     get_partners = True
     if config.has_option('trajectory analysis parameters', 'dmifs only'):
         if config.get('trajectory analysis parameters', 'dmifs only') == 'true':
             get_partners = False
-    return [center, edge_lengths, topology, trajectories, first_frame, last_frame, length, metal_names, map_formats,
-            mp, get_partners]
+    return [center, edge_lengths, topology, trajectories, first_frame, last_frame, total_number_of_frames, metal_names,
+            map_formats, number_of_processes, get_partners]
 
 
 def exclusion_volume_parameters(config):
@@ -68,17 +68,13 @@ def exclusion_volume_parameters(config):
 
 def feature_parameters(config):
     features_per_feature_type = int(config.get('feature parameters', 'features per feature type'))
-    mp = int(config.get('feature parameters', 'number of processes'))
-    return [features_per_feature_type, mp]
+    number_of_processes = int(config.get('feature parameters', 'number of processes'))
+    return [features_per_feature_type, number_of_processes]
 
 
 def pharmacophore_parameters(config):
     pharmacophore_formats = [x.strip() for x in config.get('pharmacophore parameters',
                                                            'pharmacophore formats').split(',')]
-    if config.get('pharmacophore parameters', 'weight') == 'true':
-        weight = True
-    else:
-        weight = False
     if config.get('pharmacophore parameters', 'all') == 'true':
         all_features = True
     else:
@@ -97,12 +93,13 @@ def pharmacophore_parameters(config):
         his_number = None
         iis_number = None
         ais_number = None
-    return [pharmacophore_formats, weight, all_features, best_features, best_name, hbs_number, his_number, iis_number,
+    return [pharmacophore_formats, all_features, best_features, best_name, hbs_number, his_number, iis_number,
             ais_number]
 
 
 def library_parameters(config, directory):
     pharmacophore_path = config.get('library parameters', 'pharmacophore path')
+    output_format = config.get('library parameters', 'output format')
     library_dict = {}
     for parameter in ['minimal features', 'maximal features', 'minimal hydrogen bonds', 'maximal hydrogen bonds',
                       'minimal hydrophobic interactions', 'maximal hydrophobic interactions', 
@@ -116,11 +113,14 @@ def library_parameters(config, directory):
         library_name = config.get('library parameters', 'library name')
     else:
         library_name = 'library'
-    library_path = '/'.join([directory, library_name])
+    library_path = '{}/pharmacophores/{}'.format(directory, library_name)
     pyrod_pharmacophore = True
     if config.get('library parameters', 'pyrod pharmacophore') == 'false':
         pyrod_pharmacophore = False
-    return [pharmacophore_path, library_dict, library_path, make_mandatory, pyrod_pharmacophore]
+    weight = False
+    if config.get('library parameters', 'weight') == 'true':
+        weight = True
+    return [pharmacophore_path, output_format, library_dict, library_path, make_mandatory, pyrod_pharmacophore, weight]
 
 
 def dmif_excess_parameters(config):
@@ -149,10 +149,17 @@ def centroid_parameters(config):
     last_frame = None
     if len(config.get('centroid parameters', 'last frame')) > 0:
         last_frame = int(config.get('centroid parameters', 'last frame'))
+    if last_frame is None:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            total_number_of_frames = (len(mda.Universe(trajectories[0]).trajectory) - first_frame) * len(trajectories)
+    else:
+        total_number_of_frames = (last_frame - first_frame) * len(trajectories)
     metal_names = [x.strip() for x in config.get('centroid parameters', 'metal names').split(',')]
     if len(config.get('centroid parameters', 'output name')) > 0:
         output_name = config.get('centroid parameters', 'output name')
     else:
         output_name = 'centroid'
-    mp = int(config.get('centroid parameters', 'number of processes'))
-    return [ligand, pharmacophore, topology, trajectories, first_frame, last_frame, metal_names, output_name, mp]
+    number_of_processes = int(config.get('centroid parameters', 'number of processes'))
+    return [ligand, pharmacophore, topology, trajectories, first_frame, last_frame, total_number_of_frames,
+            metal_names, output_name, number_of_processes]

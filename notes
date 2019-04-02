@@ -6,6 +6,59 @@ hi features:
    will often be hydrogen bonded)
  - limiting hi to areas with shape >= 10 and dividing hi by shape --> looks bad
 
+pharmacophore = [
+    'REMARK  1 |PyRod Pharmacophore\n'
+    'REMARK  2 |Format:\n',
+    'REMARK  3 |------------------------------------------------------------------\n',
+    'REMARK  4 |               0   1 2   3           4       5       6     7     8\n',
+    'REMARK  5 |------------------------------------------------------------------\n',
+    'REMARK  6 |ATOM      1    C  hi M   1      11.579  13.109  10.857  2.00164.07\n',
+    'REMARK  7 |ATOM      2    C  pi M   2      11.579  13.109  10.857  1.50 30.32\n',
+    'REMARK  8 |ATOM      3    C  ni M   3      11.579  13.109  10.857  1.50 29.57\n',
+    'REMARK  9 |ATOM      4    C  ai M   4      11.579  13.109  10.857  1.50 40.30\n',
+    'REMARK 10 |ATOM      5    P  ai M   4      11.579  14.109  10.857  0.44 40.30\n',
+    'REMARK 11 |ATOM      6    C  hd M   5      11.579  13.109  10.857  1.50 50.07\n',
+    'REMARK 12 |ATOM      7    P  hd M   5      11.579  15.709  10.857  1.95 50.07\n',
+    'REMARK 13 |ATOM      8    C  ha M   6      11.579  13.109  10.857  1.50 12.07\n',
+    'REMARK 14 |ATOM      9    P  ha M   6      14.179  13.109  10.857  1.95 12.07\n',
+    'REMARK 15 |ATOM     10    C hd2 O   7      11.579  13.109  10.857  1.50 23.07\n',
+    'REMARK 16 |ATOM     11    P hd2 O   7      11.579  15.709  10.857  1.95 23.07\n',
+    'REMARK 17 |ATOM     12    P hd2 O   7      14.179  13.109  10.857  1.95 23.07\n',
+    'REMARK 18 |ATOM     13    C ha2 M   8      11.579  13.109  10.857  1.50 37.07\n',
+    'REMARK 19 |ATOM     14    P ha2 M   8      11.579  15.709  10.857  1.95 37.07\n',
+    'REMARK 20 |ATOM     15    P ha2 M   8      14.179  13.109  10.857  1.95 37.07\n',
+    'REMARK 21 |ATOM     16    C hda M   9       3.500 -22.500  -8.500  1.50 39.00\n',
+    'REMARK 22 |ATOM     17   Pd hda M   9       6.100 -22.500  -8.500  1.95 39.00\n',
+    'REMARK 23 |ATOM     18   Pa hda M   9       3.500 -19.900  -8.500  1.95 39.00\n',
+    'REMARK 24 |ATOM     19    C  ev M  10      11.579  13.109  10.857  1.00  0.00\n',
+    'REMARK 25 |END\n',
+    'REMARK 26 |------------------------------------------------------------------\n',
+    'REMARK 27 |Legend:\n',
+    'REMARK 28 |0 - part (C - core, P - partner, Pd - donor partner, Pa - acceptor partner)\n',
+    'REMARK 29 |1 - type\n',
+    'REMARK 30 |2 - flag (O - optional, M - mandatory)\n',
+    'REMARK 31 |3 - id\n',
+    'REMARK 32 |4 - x coordinate\n',
+    'REMARK 33 |5 - y coordinate\n',
+    'REMARK 34 |6 - z coordinate\n',
+    'REMARK 35 |7 - tolerance\n',
+    'REMARK 36 |8 - score\n']
+
+from pyrod_lib.pharmacophore import generate_library
+generate_library('/mdspace/pyrod/examples/test/pyrod/pharmacophores/selected.pml', 'pml', {
+'minimal features': 3, 'maximal features': 5, 'minimal hydrogen bonds' : 1, 'maximal hydrogen bonds': 5,
+'minimal hydrophobic interactions': 1, 'maximal hydrophobic interactions': 3,
+'minimal aromatic interactions': 0, 'maximal aromatic interactions': 2,
+'minimal ionizable interactions': 0, 'maximal ionizable interactions': 2
+}, '/mdspace/pyrod/examples/test/pyrod/pharmacophores/library', True, True, '/mdspace/pyrod/examples/test/pyrod',
+False, False)
+
+from pyrod.pyrod_lib.write import setup_logger
+from pyrod.pyrod_lib.read import pharmacophore_reader
+logger = setup_logger('test', '/home/david/Desktop', False)
+pharmacophore = pharmacophore_reader('/mdspace/pyrod/examples/test/pyrod/pharmacophores/selected.pml', False, logger)
+pharmacophore
+
     |id| type | [x, y, z] |tolerance|[[x_i,y_i,z_i]]|tolerance_i|score|volume|
  0   0    hi     origin      (1.5)         -              -
  1   1    pi     origin      (1.5)         -              -

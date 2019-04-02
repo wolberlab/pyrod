@@ -14,28 +14,28 @@ from scipy.spatial import cKDTree
 
 # pyrod modules
 try:
-    from pyrod.modules.helper_trajectory import grid_parameters, grid_generator
-    from pyrod.modules.helper_math import distance, standard_deviation
-    from pyrod.modules.lookup import feature_names
-    from pyrod.modules.helper_update import update_user
+    from pyrod.pyrod_lib.grid import grid_characteristics, generate_grid
+    from pyrod.pyrod_lib.lookup import feature_types
+    from pyrod.pyrod_lib.math import distance, standard_deviation
+    from pyrod.pyrod_lib.write import update_user
 except ImportError:
-    from modules.helper_trajectory import grid_parameters, grid_generator
-    from modules.helper_math import distance, standard_deviation
-    from modules.lookup import feature_names
-    from modules.helper_update import update_user
+    from pyrod_lib.grid import grid_characteristics, generate_grid
+    from pyrod_lib.lookup import feature_types
+    from pyrod_lib.math import distance, standard_deviation
+    from pyrod_lib.write import update_user
 
 
-def center(positions, cutoff):
+def get_center(positions, cutoff):
     """ This function returns the approximate position with the most neighbors within the specified cutoff. If multiple
     positions have the most neighbors, the position with the lowest standard deviation of the distances to its
     neighbors is returned. """
     positions = np.array(positions)
-    x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_parameters(positions)[:-1]
+    x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_characteristics(positions)[:-1]
     x_center, y_center, z_center = [round((x_minimum + x_maximum) / 2, 1), round((y_minimum + y_maximum) / 2, 1),
                                     round((z_minimum + z_maximum) / 2, 1)]
     x_length, y_length, z_length = [round(x_maximum - x_minimum, 1), round(y_maximum - y_minimum, 1),
                                     round(z_maximum - z_minimum, 1)]
-    grid = grid_generator([x_center, y_center, z_center], [x_length, y_length, z_length], 0.1)
+    grid = generate_grid([x_center, y_center, z_center], [x_length, y_length, z_length], 0.1)
     tree = cKDTree(positions)
     length_positions = len(positions)
     less_positions = [positions[x] for x in set(tree.query(grid, distance_upper_bound=0.1)[1]) if x != length_positions]
@@ -63,7 +63,7 @@ def center(positions, cutoff):
         return [less_positions[indices_maximal_neighbors[0]], indices_lists[indices_maximal_neighbors[0]]]
 
 
-def feature_tolerance(position, tree, scores, maximal_score):
+def get_core_tolerance(position, tree, scores, maximal_score):
     """ This function returns the tolerance for a pharmacophore feature and the indices of involved positions. The
     tolerance is determined by checking the score of nearby positions. If the score of one of the positions within a
     certain radius is below half of the maximal score provided, the last checked radius will be returned as tolerance.
@@ -80,15 +80,15 @@ def feature_tolerance(position, tree, scores, maximal_score):
     return [maximal_cutoff, involved_indices]
 
 
-def maximal_feature_tolerance(indices, positions, tree, feature_scores, feature_maximum):
-    """ This function returns the maximal tolerance for a given list of position indices and returns those indices
-    that have the maximal tolerance. Additionally indices of involved positions of the tolerance sphere are returned.
+def get_maximal_core_tolerance(indices, positions, tree, feature_scores, feature_maximum):
+    """ This function returns the maximal core tolerance for a given list of position indices and returns those indices
+    that have the maximal tolerance. Additionally, indices of involved positions of the tolerance sphere are returned.
     """
     final_tolerance = 0
     matching_indices = []
     involved_indices_list = []
     for index in indices:
-        tolerance, involved_indices = feature_tolerance(positions[index], tree, feature_scores, feature_maximum)
+        tolerance, involved_indices = get_core_tolerance(positions[index], tree, feature_scores, feature_maximum)
         if tolerance > 0:
             if tolerance == final_tolerance:
                 involved_indices_list.append(involved_indices)
@@ -100,7 +100,7 @@ def maximal_feature_tolerance(indices, positions, tree, feature_scores, feature_
     return [final_tolerance, matching_indices, involved_indices_list]
 
 
-def maximal_sum_of_scores(feature_scores, indices, feature_indices):
+def get_maximal_sum_of_scores(feature_scores, indices, feature_indices):
     """ This function identifies the index whose feature indices have the biggest sum of scores. The identified index
     with the feature indices are returned. """
     maximal_score = 0
@@ -114,103 +114,97 @@ def maximal_sum_of_scores(feature_scores, indices, feature_indices):
     return [index_maximal_score, involved_indices_maximal_score]
 
 
-def generate_feature(feature_name, index, positions, partners, feature_scores, tolerance):
-    feature_partners = []
-    if feature_name in ['ha', 'hd', 'ha2', 'hd2', 'ai']:
-        partner, used_list = center(partners[index], 1.5)
-        feature_partners.append(partner)
-        if feature_name in ['ha2', 'hd2']:
-            partner2 = center([x for y, x in enumerate(partners[index]) if y not in used_list],
-                              1.5)[0]
-            feature_partners.append(partner2)
-    elif feature_name == 'hda':
-        feature_partners.append(center(partners[index][0], 1.5)[0])
-        feature_partners.append(center(partners[index][1], 1.5)[0])
-    return [feature_name, positions[index], tolerance, feature_partners, 0, round(feature_scores[index], 1)]
+def get_partner_tolerance(feature_type, core_tolerance):
+    """ This function returns the partner tolerance for a pharmacophore feature with directionality. """
+    partner_tolerance = 0.0
+    if feature_type in ['ha', 'hd', 'ha2', 'hd2', 'hda']:
+        partner_tolerance = core_tolerance * 1.2999999333333332
+    elif feature_type == 'ai':
+        partner_tolerance = 0.43633232
+    return partner_tolerance
 
 
-def features_processing(results, features_per_feature_type):
-    features = results[0]
-    if len(results) > 1:
-        for result in results[1:]:
-            features += result
-    features_processed = []
-    for feature_name in feature_names:
-        features_processed += sorted([x for x in features if x[0] == feature_name], key=operator.itemgetter(5),
-                                     reverse=True)[:features_per_feature_type]
-    features_processed = [[counter] + x for counter, x in enumerate(features_processed)]
-    return features_processed
+def get_partner_positions(feature_type, partner_positions_list):
+    """ This function returns a list of partner positions for a pharmacophore feature with directionality. """
+    partner_positions = []
+    if feature_type in ['ha', 'hd', 'ha2', 'hd2', 'ai']:
+        partner_position, used_list = get_center(partner_positions_list, 1.5)
+        partner_positions.append(partner_position)
+        if feature_type in ['ha2', 'hd2']:
+            partner_position2 = get_center([x for y, x in enumerate(partner_positions_list) if y not in used_list], 1.5)[0]
+            partner_positions.append(partner_position2)
+    elif feature_type == 'hda':
+        partner_positions.append(get_center(partner_positions_list[0], 1.5)[0])
+        partner_positions.append(get_center(partner_positions_list[1], 1.5)[0])
+    return partner_positions
 
 
-def select_features(features, hbs_number, his_number, iis_number, ais_number):
-    hbs = sorted([x for x in features if x[1] in ['hd', 'ha', 'hd2', 'ha2', 'hda']],
-                 key=operator.itemgetter(6), reverse=True)[:hbs_number]
-    his = [x for x in features if x[1] in ['hi']][:his_number]
-    iis = sorted([x for x in features if x[1] in ['pi', 'ni']], key=operator.itemgetter(6), reverse=True)[:iis_number]
-    ais = [x for x in features if x[1] in ['ai']][:ais_number]
-    return hbs + his + iis + ais
+def renumber_features(pharmacophore):
+    """ This function renumbers features. """
+    return [[counter + 1] + x[1:] for counter, x in enumerate(pharmacophore)]
+
+
+def select_features(pharmacophore, hbs_number, his_number, iis_number, ais_number):
+    """ This functions returns a list of best features per feature class. """
+    hbs = sorted([feature for feature in pharmacophore if feature[1] in ['hd', 'ha', 'hd2', 'ha2', 'hda']],
+                 key=operator.itemgetter(7), reverse=True)[:hbs_number]
+    his = [feature for feature in pharmacophore if feature[1] in ['hi']][:his_number]
+    iis = sorted([feature for feature in pharmacophore if feature[1] in ['pi', 'ni']], key=operator.itemgetter(6),
+                 reverse=True)[:iis_number]
+    ais = [feature for feature in pharmacophore if feature[1] in ['ai']][:ais_number]
+    evs = [feature for feature in pharmacophore if feature[1] == 'ev']
+    return hbs + his + iis + ais + evs
 
 
 def evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict, pyrod_pharmacophore):
-    hb_positions = []
-    pyrod_hb_positions = []
-    hi_positions = []
-    ii_positions = []
-    ai_positions = []
+    """ This function evaluates if a pharmacophore matches the pharmacophore library criteria. """
     positions = []
-    hb_dict = {}
+    hb_positions = []
+    hb_count = 0
+    hi_positions = []
+    ai_positions = []
+    ii_positions = []
     for index in pharmacophore:
-        position = None
         feature = super_pharmacophore[index]
-        feature_name = feature.attrib['name']
-        if feature_name in ['H', 'AR', 'PI', 'NI']:
-            position = feature.find('position')
-            position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
-            if feature_name == 'H':
-                hi_positions.append(position)
-            elif feature_name in ['PI', 'NI']:
-                ii_positions.append(position)
-            elif feature_name == 'AR':
-                ai_positions.append(position)
-        elif feature_name in ['HBA', 'HBD']:
-            if feature_name == 'HBA':
-                position = feature.find('target')
-            else:
-                position = feature.find('origin')
-            position = [float(position.attrib['x3']), float(position.attrib['y3']), float(position.attrib['z3'])]
-            hb_positions.append(position)
-            # sub features from hd2, ha2 and hda should be together in pyrod pharmacophores
-            if pyrod_pharmacophore:
-                # check if sub feature
-                if len(feature.attrib['featureId'].split('_')) > 1:
-                    featureId = feature.attrib['featureId'].split('_')[0]
-                    # fill hb_dict about presence of hd and ha
-                    if featureId in hb_dict.keys():
-                        hb_dict[featureId] += 1
-                    else:
-                        hb_dict[featureId] = 1
-                    # add position of sub features only once
-                    if feature.attrib['featureId'].split('_')[1] == '1':
-                        pyrod_hb_positions.append(position)
-                else:
-                    pyrod_hb_positions.append(position)
-        if position is not None:
-            if position not in positions:
-                positions.append(position)
+        feature_type = feature[1]
+        core_position = feature[3]
+        if core_position not in positions:
+            positions.append(core_position)
+        if feature_type in ['ha', 'hd', 'ha2', 'hd2', 'hda']:
+            hb_count += len(feature[5])
+            hb_positions.append(core_position)
+        elif feature_type == 'hi':
+            hi_positions.append(core_position)
+        elif feature_type == 'ai':
+            ai_positions.append(core_position)
+        elif feature_type in ['pi', 'ni']:
+            ii_positions.append(core_position)
     # number of independent features should not be lower than minimum
     if library_dict['minimal features'] > len(positions):
         return False
     # number of independent features should not be higher than maximum
     if library_dict['maximal features'] < len(positions):
         return False
+    # number of hydrogen bonds should not be lower than minimum
+    if library_dict['minimal hydrogen bonds'] > hb_count:
+        return False
     # number of hydrogen bonds should not be higher than maximum
-    if library_dict['maximal hydrogen bonds'] < len(hb_positions):
+    if library_dict['maximal hydrogen bonds'] < hb_count:
+        return False
+    # number of hydrophobic interactions should not be lower than minimum
+    if library_dict['minimal hydrophobic interactions'] > len(hi_positions):
         return False
     # number of hydrophobic interactions should not be higher than maximum
     if library_dict['maximal hydrophobic interactions'] < len(hi_positions):
         return False
+    # number of aromatic interactions should not be lower than minimum
+    if library_dict['minimal aromatic interactions'] > len(ai_positions):
+        return False
     # number of aromatic interactions should not be higher than maximum
     if library_dict['maximal aromatic interactions'] < len(ai_positions):
+        return False
+    # number of ionizable interactions should not be lower than minimum
+    if library_dict['minimal ionizable interactions'] > len(ii_positions):
         return False
     # number of ionizable interactions should not be higher than maximum
     if library_dict['maximal ionizable interactions'] < len(ii_positions):
@@ -220,13 +214,10 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict, pyr
         for pair in product(hi_positions, ii_positions):
             if distance(*pair) < 3:
                 return False
-        # different hydrogen bond types should not appear within 1.5 A
-        for pair in combinations(pyrod_hb_positions, 2):
+        # different hydrogen bond features should not appear within 1.5 A
+        for pair in combinations(hb_positions, 2):
             if distance(*pair) < 1.5:
                 return False
-        # sub features from hd2, ha2 and hda should be together
-        if 1 in hb_dict.values():
-            return False
         # different ionizable features should not appear within 3 A
         for pair in combinations(ii_positions, 2):
             if distance(*pair) < 3:

@@ -373,7 +373,7 @@ cation_pi_distance_score_dict = {3.1: 0.25, 3.2: 0.43, 3.3: 0.59, 3.4: 0.72, 3.5
 grid_score_dict = {'x': 0, 'y': 1, 'z': 2, 'shape': 3, 'ha': 4, 'hd': 5, 'ha2': 6, 'hd2': 7, 'hda': 8, 'ni': 9,
                    'pi': 10, 'hi': 11, 'hi_norm': 12, 'ai': 13, 'tw': 14, 'h2o': 15}
 grid_list_dict = {'ha': 0, 'hd': 1, 'ha2': 2, 'hd2': 3, 'hda': 4, 'ai': 5}
-feature_names = ('ha', 'hd', 'ai', 'ha2', 'hd2', 'hda', 'hi', 'pi', 'ni')
+feature_types = ('ai', 'ha2', 'hd2', 'hda', 'ha', 'hd', 'hi', 'pi', 'ni')
 __version__ = '0.7.3'  # PyRod version
 terminal_width = shutil.get_terminal_size()[0]
 logo = ('',
@@ -390,4 +390,3 @@ logo = ('',
         '{:^{width}}'.format(' Tracing water molecules in molecular  ', width=terminal_width),
         '{:^{width}}'.format('        dynamics simulations.          ', width=terminal_width),
         '')
-help_description = 'PyRod v{} - Tracing water molecules in molecular dynamics simulations.'.format(__version__)

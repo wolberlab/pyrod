@@ -19,38 +19,36 @@ from scipy.spatial.distance import cdist
 
 # pyrod modules
 try:
-    from pyrod.modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
+    from pyrod.pyrod_lib.grid import grid_characteristics, grid_partners_to_array
+    from pyrod.pyrod_lib.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
         pi_stacking_distance_score_dict, t_stacking_distance_score_dict, cation_pi_distance_score_dict, \
         CATION_PI_ANGLE_CUTOFF, standard_resnames_dict, CLASH_CUTOFF
-    from pyrod.modules.helper_read import translate_pharmacophore
-    from pyrod.modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, \
+    from pyrod.pyrod_lib.math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
+        cross_product
+    from pyrod.pyrod_lib.read import pharmacophore_reader
+    from pyrod.pyrod_lib.trajectory_helper import main_selection, hd_selection, ha_selection, hi_selection, \
         ni_selection, pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, \
-        grid_parameters, grid_partners_to_array, ai_geometry, t_stacking_partner_position
-    from pyrod.modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
-        cross_product
-    from pyrod.modules.helper_update import update_progress_dmif_parameters, update_progress_dmif, update_user
-    from pyrod.modules.helper_write import setup_logger, file_path
+        ai_geometry, t_stacking_partner_position
+    from pyrod.pyrod_lib.write import setup_logger, file_path, update_user, update_progress
 except ImportError:
-    from modules.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
+    from pyrod_lib.grid import grid_characteristics, grid_partners_to_array
+    from pyrod_lib.lookup import grid_list_dict, hb_dist_dict, hb_angl_dict, hd_sel_dict, sel_cutoff_dict, \
         pi_stacking_distance_score_dict, t_stacking_distance_score_dict, cation_pi_distance_score_dict, \
         CATION_PI_ANGLE_CUTOFF, standard_resnames_dict, CLASH_CUTOFF
-    from modules.helper_read import translate_pharmacophore
-    from modules.helper_trajectory import main_selection, hd_selection, ha_selection, hi_selection, ni_selection, \
-        pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, grid_parameters, \
-        grid_partners_to_array, ai_geometry, t_stacking_partner_position
-    from modules.helper_math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
+    from pyrod_lib.math import distance, angle, normal, opposite, adjacent, norm, vector_angle, vector, \
         cross_product
-    from modules.helper_update import update_progress_dmif_parameters, update_progress_dmif, update_user
-    from modules.helper_write import setup_logger, file_path
+    from pyrod_lib.read import pharmacophore_reader
+    from pyrod_lib.trajectory_helper import main_selection, hd_selection, ha_selection, hi_selection, \
+        ni_selection, pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, \
+        ai_geometry, t_stacking_partner_position
+    from pyrod_lib.write import setup_logger, file_path, update_user, update_progress
 
 
-def trajectory_analysis(topology, trajectory, counter, length_trajectory, number_processes, number_trajectories,
-                        grid_score, grid_partners, first_frame, last_frame, metal_names, directory, debugging,
-                        get_partners):
+def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_counter, total_number_of_frames,
+                        first_frame, last_frame, metal_names, counter, directory, debugging, get_partners,
+                        trajectory_time, results):
     logger = setup_logger('_'.join(['dmif_trajectory', str(counter)]), directory, debugging)
     logger.info('Started analysis of trajectory {}.'.format(counter))
-    check_progress, final, past_frames, future_frames = update_progress_dmif_parameters(
-        counter, length_trajectory, number_processes, number_trajectories)
     if debugging:
         u = mda.Universe(topology, trajectory)
     else:
@@ -62,7 +60,7 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
                          zip(range(len(u.atoms.resnames)), u.atoms.resnames, u.atoms.resids, u.atoms.names,
                          u.atoms.types)], dtype=dtype)
     positions = np.array([[x, y, z] for x, y, z in zip(grid_score['x'], grid_score['y'], grid_score['z'])])
-    x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_parameters(positions)[:-1]
+    x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_characteristics(positions)[:-1]
     tree = cKDTree(positions)
     main_atoms = main_selection(topology)
     hd_atomids, hd_types, hd_hydrogen_atomid_lists = hd_selection(main_atoms)
@@ -72,7 +70,6 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
     pi_atomids = pi_selection(main_atoms)
     ai_atomids = ai_selection(main_atoms)
     metal_atomids = metal_selection(topology, metal_names)
-    start = time.time()
     for frame, _ in enumerate(u.trajectory[first_frame:last_frame:]):
         # create index collectors
         shape_inds = []
@@ -310,17 +307,20 @@ def trajectory_analysis(topology, trajectory, counter, length_trajectory, number
         grid_score['hda'][hda_inds] += 1
         grid_score['tw'][tw_inds] += 1
         grid_score['h2o'][h2o_inds] += 1
-        if check_progress:
-            update_progress_dmif(counter, frame, length_trajectory, number_trajectories, number_processes, past_frames,
-                                 future_frames, start, final)
+        with frame_counter.get_lock():
+            frame_counter.value += 1
+        update_progress(frame_counter.value / total_number_of_frames, 'Progress of trajectory analysis',
+                        ((time.time() - trajectory_time) / frame_counter.value) * (total_number_of_frames - frame_counter.value))
         logger.debug('Trajectory {} finished with frame {}.'.format(counter, frame))
     logger.info('Finished analysis of trajectory {}.'.format(counter))
     grid_partners = grid_partners_to_array(grid_partners)
-    return [grid_score, grid_partners]
+    results.append([grid_score, grid_partners])
+    return
 
 
 def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligand_path, counter, first_frame,
-                                 last_frame, metal_names, directory, output_name, debugging):
+                                 last_frame, metal_names, directory, output_name, debugging, total_number_of_frames,
+                                 frame_counter, trajectory_time):
     dcd_name = 'ensemble_' + str(counter) + '.dcd'
     output_directory = '/'.join([directory, output_name])
     file_path(dcd_name, output_directory)
@@ -351,11 +351,18 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
     pi_atomids = pi_selection(main_atoms)
     ai_atomids = ai_selection(main_atoms)
     metal_atomids = metal_selection(topology, metal_names)
-    features = translate_pharmacophore(pharmacophore_path)
+    features = [feature for feature in pharmacophore_reader(pharmacophore_path, False, logger) if feature[1] != 'ev']
     if counter == 0:
         file_path('protein.pdb', output_directory)
-        with mda.Writer('/'.join([output_directory, 'protein.pdb']), bonds=None, n_atoms=protein.n_atoms) as PDB:
-            PDB.write(protein)
+        if debugging:
+            with mda.Writer('/'.join([output_directory, 'protein.pdb']), bonds=None, n_atoms=protein.n_atoms) as PDB:
+                PDB.write(protein)
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                with mda.Writer('/'.join([output_directory, 'protein.pdb']), bonds=None, n_atoms=protein.n_atoms) as \
+                        PDB:
+                    PDB.write(protein)
     frame_collector = []
     with mda.Writer('/'.join([output_directory, dcd_name]), n_atoms=protein.n_atoms) as DCD:
         for frame, _ in enumerate(u.trajectory[first_frame:last_frame:]):
@@ -363,15 +370,18 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
             matched_features = 0
             for feature in features:
                 ai, ha, hd, pi, ni, cation_pi, hi = 0, 0, 0, 0, 0, 0, 0
-                feature_type = feature['type']
-                feature_position = np.array(list(feature[['x', 'y', 'z']]))
-                feature_position_i = np.array(list(feature[['xi', 'yi', 'zi']]))
-                feature_tolerance_i = feature['tolerance_i']
+                feature_type = feature[1]
+                feature_position = np.array(feature[3])
+                partner_position = []
+                if feature_type in ['ha', 'hd', 'ha2', 'hd2', 'ai']:
+                    partner_position = np.array(feature[5][0])
+                partner_tolerance = feature[6]
+                feature_score = feature[7]
                 # hydrogen bonds and metal interaction
                 if feature_type == 'hd':
                     if len(ha_atomids) > 0:
                         ha_positions = positions[ha_atomids]
-                        ha += np.sum((cdist(feature_position_i.reshape(1, 3), ha_positions) <= feature_tolerance_i)[0])
+                        ha += np.sum((cdist(partner_position.reshape(1, 3), ha_positions) <= partner_tolerance)[0])
                     if ha == 0:
                         break
                     else:
@@ -379,11 +389,11 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                 elif feature_type == 'ha':
                     if len(hd_atomids) > 0:
                         hd_positions = positions[hd_atomids]
-                        hd += np.sum((cdist(feature_position_i.reshape(1, 3), hd_positions) <= feature_tolerance_i)[0])
+                        hd += np.sum((cdist(partner_position.reshape(1, 3), hd_positions) <= partner_tolerance)[0])
                     if len(metal_atomids) > 0:
                         metal_positions = positions[metal_atomids]
-                        hd += np.sum((cdist(feature_position_i.reshape(1, 3), metal_positions) <=
-                                      feature_tolerance_i)[0])
+                        hd += np.sum((cdist(partner_position.reshape(1, 3), metal_positions) <=
+                                      partner_tolerance)[0])
                     if hd == 0:
                         break
                     else:
@@ -423,7 +433,7 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                                 if len(hi_positions) > 1:
                                     hi += buriedness(feature_position, hi_positions)
                             # check if pi and ni > 0.65
-                            if hi < feature['score']:
+                            if hi < feature_score:
                                 break
                             else:
                                 matched_features += 1
@@ -446,12 +456,12 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                                     ai_n, alpha = ai_geometry(vector(ai_i, feature_position), ai_n)
                                     if alpha <= CATION_PI_ANGLE_CUTOFF:
                                         cation_pi += cation_pi_distance_score_dict[round(ai_distance, 1)]
-                        if pi + cation_pi - ni < feature['score']:
+                        if pi + cation_pi - ni < feature_score:
                             break
                         else:
                             matched_features += 1
                     elif feature_type == 'ni':
-                        if ni - pi < feature['score']:
+                        if ni - pi < feature_score:
                             break
                         else:
                             matched_features += 1
@@ -465,8 +475,7 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                         for pi_position in pi_positions:
                             pi_distance = distance(pi_position, feature_position)
                             if 3.1 <= pi_distance <= 6.0:
-                                alpha = ai_geometry(vector(pi_position, feature_position),
-                                                    feature[['xi', 'yi', 'zi']])[1]
+                                alpha = ai_geometry(vector(pi_position, feature_position), partner_position)[1]
                                 if alpha <= CATION_PI_ANGLE_CUTOFF:
                                     ai += cation_pi_distance_score_dict[round(pi_distance, 1)]
                     if len(ai_atomids) > 0:
@@ -485,7 +494,7 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                             if 3.3 <= ai_distance <= 6.0:
                                 ai_vector = vector(ai_i, feature_position)
                                 ai_n, alpha = ai_geometry(ai_vector, ai_n)
-                                angle_tolerance = math.degrees(feature_tolerance_i)
+                                angle_tolerance = math.degrees(partner_tolerance)
                                 # pi- and t-stacking with pi-system of protein aromatic center
                                 if alpha < 45:
                                     offset = opposite(alpha, ai_distance)
@@ -494,14 +503,14 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                                         # check offset between grid point and aromatic center
                                         if offset <= 2.0:
                                             # check angle between normals
-                                            if vector_angle(ai_n, feature[['xi', 'yi', 'zi']]) <= angle_tolerance:
+                                            if vector_angle(ai_n, partner_position) <= angle_tolerance:
                                                 ai += pi_stacking_distance_score_dict[round(ai_distance, 1)]
                                     # t-stacking
                                     else:
                                         # check offset between grid point and aromatic center
                                         if offset <= 0.5:
                                             # check angle between normals
-                                            if (90 - angle_tolerance <= vector_angle(ai_n, feature[['xi', 'yi', 'zi']])
+                                            if (90 - angle_tolerance <= vector_angle(ai_n, partner_position)
                                                     >= 90 + angle_tolerance):
                                                 ai += t_stacking_distance_score_dict[round(ai_distance, 1)]
                                 # t-stacking with hydrogen of protein aromatic center
@@ -510,18 +519,17 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                                         offset = adjacent(alpha, ai_distance)
                                         # check offset between grid point and aromatic center
                                         if offset <= 0.5:
-                                            if (90 - angle_tolerance <= vector_angle(ai_n, feature[['xi', 'yi', 'zi']])
+                                            if (90 - angle_tolerance <= vector_angle(ai_n, partner_position)
                                                     >= 90 + angle_tolerance):
                                                 ai += t_stacking_distance_score_dict[round(ai_distance, 1)]
-                    if ai < feature['score']:
+                    if ai < feature_score:
                         break
                     else:
                         matched_features += 1
             if matched_features == len(features):
                 clash = False
                 main_positions = positions[main_atomids]
-                if cdist(main_positions, np.array([list(feature[['x', 'y', 'z']]) for feature in
-                                                   features])).min() < CLASH_CUTOFF:
+                if cdist(main_positions, np.array([feature[3] for feature in features])).min() < CLASH_CUTOFF:
                     clash = True
                 if ligand_path:
                     if cdist(main_positions, ligand_positions).min() < CLASH_CUTOFF:
@@ -530,6 +538,11 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                     DCD.write(protein)
                     frame_collector.append(frame + first_frame)
             logger.debug('Trajectory {} finished with frame {}.'.format(counter, frame))
+            with frame_counter.get_lock():
+                frame_counter.value += 1
+            update_progress(frame_counter.value / total_number_of_frames, 'Progress of trajectory analysis',
+                            ((time.time() - trajectory_time) / frame_counter.value) *
+                            (total_number_of_frames - frame_counter.value))
     logger.info('Finished screening of trajectory {}.'.format(counter))
     with open('{}/frames_{}.csv'.format(output_directory, counter), 'w') as csv:
         for frame in frame_collector:
@@ -537,7 +550,7 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
     return
 
 
-def ensembles_to_centroid(topology, trajectories, output_name, directory, debugging):
+def ensemble_to_centroid(topology, trajectories, output_name, directory, debugging):
     logger = setup_logger('ensembles_to_centroid', directory, debugging)
     output_directory = '/'.join([directory, output_name])
     protein_topology = '/'.join([output_directory, 'protein.pdb'])

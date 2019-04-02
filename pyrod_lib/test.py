@@ -10,12 +10,11 @@ import numpy as np
 
 # pyrod modules
 try:
-    from pyrod.modules.helper_math import distance, maximal_distance, mean, squared_deviations_from_mean, \
+    from pyrod.pyrod_lib.math import distance, maximal_distance, mean, squared_deviations_from_mean, \
         standard_deviation, angle, maximal_angle
 except ImportError:
-    from modules.helper_math import distance, maximal_distance, mean, squared_deviations_from_mean, \
+    from pyrod_lib.math import distance, maximal_distance, mean, squared_deviations_from_mean, \
         standard_deviation, angle, maximal_angle
-
 
 
 class TestHelperMath(unittest.TestCase):
