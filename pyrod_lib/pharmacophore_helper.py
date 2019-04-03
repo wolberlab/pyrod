@@ -29,7 +29,7 @@ def get_center(positions, cutoff):
     """ This function returns the approximate position with the most neighbors within the specified cutoff. If multiple
     positions have the most neighbors, the position with the lowest standard deviation of the distances to its
     neighbors is returned. """
-    positions = np.array(positions)
+    positions = np.array([[x, y, z] for x, y, z in zip(positions[0::3], positions[1::3], positions[2::3])])
     x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_characteristics(positions)[:-1]
     x_center, y_center, z_center = [round((x_minimum + x_maximum) / 2, 1), round((y_minimum + y_maximum) / 2, 1),
                                     round((z_minimum + z_maximum) / 2, 1)]

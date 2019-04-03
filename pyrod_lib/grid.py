@@ -73,7 +73,7 @@ def dmif_data_structure(grid, get_partners):
 
 
 def grid_partners_to_array(grid_partners):
-    grid_partners = np.array([tuple(x) for x in grid_partners], dtype=[(x[0], object) for x in
+    grid_partners = np.array([tuple(x) for x in grid_partners], dtype=[(x[0], 'O') for x in
                              sorted([[x, grid_list_dict[x]] for x in grid_list_dict.keys()],
                              key=operator.itemgetter(1))])
     return grid_partners

@@ -153,7 +153,7 @@ def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_c
                     for hd_hydrogen_coor in hd_hydrogen_coors:
                         if angle(o_coor, hd_hydrogen_coor, hd_coor) >= hb_angl_dict[hd_type]:
                             ha += 1
-                            ha_i.append([float(x) for x in hd_coor])
+                            ha_i += [float(x) for x in hd_coor]
             # hydrogen bond donor feature
             for ha_ind in ha_list:
                 ha_coor, ha_type = ha_positions[ha_ind], ha_types[ha_ind]
@@ -161,12 +161,12 @@ def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_c
                     for h_coor in [h1_coor, h2_coor]:
                         if angle(ha_coor, h_coor, o_coor) >= hb_angl_dict[ha_type]:
                             hd += 1
-                            hd_i.append([float(x) for x in ha_coor])
+                            hd_i += [float(x) for x in ha_coor]
             # metals
             for metal_ind in metal_list:
                 metal_position = metal_positions[metal_ind]
                 ha += 1
-                ha_i.append([float(x) for x in metal_position])
+                ha_i += [float(x) for x in metal_position]
                 ni += 2.6 / distance(o_coor, metal_position)
             # indices of points close to water
             inds = tree.query_ball_point(o_coor, r=1.41)
@@ -226,7 +226,7 @@ def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_c
                         if 3.1 <= pi_distance <= 6.0:
                             grid_score['ai'][ind] += cation_pi_distance_score_dict[round(pi_distance, 1)]
                             if get_partners:
-                                grid_partners[ind][grid_list_dict['ai']] += [[float(x) for x in pi_i]]
+                                grid_partners[ind][grid_list_dict['ai']] += [float(x) for x in pi_i]
                 # positive ionizable
                 for ni_ind in ni_list:
                     pi += 2.6 / distance(o_coor, ni_positions[ni_ind])
@@ -307,10 +307,12 @@ def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_c
         grid_score['hda'][hda_inds] += 1
         grid_score['tw'][tw_inds] += 1
         grid_score['h2o'][h2o_inds] += 1
+        # grid partners to numpy array
         with frame_counter.get_lock():
             frame_counter.value += 1
         update_progress(frame_counter.value / total_number_of_frames, 'Progress of trajectory analysis',
-                        ((time.time() - trajectory_time) / frame_counter.value) * (total_number_of_frames - frame_counter.value))
+                        ((time.time() - trajectory_time) / frame_counter.value) * (total_number_of_frames -
+                                                                                   frame_counter.value))
         logger.debug('Trajectory {} finished with frame {}.'.format(counter, frame))
     logger.info('Finished analysis of trajectory {}.'.format(counter))
     grid_partners = grid_partners_to_array(grid_partners)

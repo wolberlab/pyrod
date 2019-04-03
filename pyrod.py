@@ -120,7 +120,7 @@ if __name__ == '__main__':
             for feature_type in [x for x in dmif.dtype.names if x not in ['x', 'y', 'z']]:
                 dmif_writer(dmif[feature_type],
                             np.array([[x, y, z] for x, y, z in zip(dmif['x'], dmif['y'], dmif['z'])]),
-                            map_format, feature_type, '{}/'.format(directory, 'dmifs'), logger)
+                            map_format, feature_type, '{}/{}'.format(directory, 'dmifs'), logger)
     # generating exclusion volumes
     if config.has_section('exclusion volume parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('exclusion volume parameters')]))

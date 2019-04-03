@@ -262,7 +262,8 @@ def pi_stacking_partner_position(B, AC, c, alpha):
     """ This function returns the position of an interacting aromatic center for pi-stacking. """
     b = norm(AC)
     b_new = adjacent(alpha, c)
-    return [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
+    position = [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
+    return [item for sublist in position for item in sublist]
 
 
 def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
@@ -276,6 +277,7 @@ def t_stacking_partner_position(A, B, AC, a, c, alpha, radial=False):
         vectors += [rotate_vector(BC, AC, x)for x in [30, 60, 90, 120, 150]]
         positions = [[float(x + ((y / a) * 3.5)) for x, y in zip(B, BC)] for BC in vectors]
         positions += [[float(x - ((y / a) * 3.5)) for x, y in zip(B, BC)] for BC in vectors]
-        return positions
+        return [item for sublist in positions for item in sublist]
     else:
-        return [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
+        position = [[float(x - ((y / b) * b_new)) for x, y in zip(B, AC)]]
+        return [item for sublist in position for item in sublist]
