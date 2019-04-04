@@ -7,11 +7,10 @@ This module contains functions needed to generate and process grid data structur
 # python standard library
 import copy
 import operator
-
-# external libraries
 import pickle
 import sys
 
+# external libraries
 import numpy as np
 
 # pyrod modules

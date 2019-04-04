@@ -4,8 +4,6 @@ This module contains helper functions needed to generate and process dmifs.
 """
 
 
-# python standard library
-
 # external libraries
 import numpy as np
 

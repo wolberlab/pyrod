@@ -110,10 +110,11 @@ if __name__ == '__main__':
         update_user('Processing results.', logger)
         dmif, partners = post_processing(results, total_number_of_frames)
         results = None
-        pickle_writer(dmif, 'dmif', '/'.join([directory, 'data']), logger)
+        update_user('Writing raw data to {}/data.'.format(directory), logger)
+        pickle_writer(dmif, 'dmif', '{}/{}'.format(directory, 'data'))
         if get_partners:
             for key in grid_list_dict.keys():
-                pickle_writer(partners[key].tolist(), key, '/'.join([directory, 'data']), logger)
+                pickle_writer(partners[key].tolist(), key, '/'.join([directory, 'data']))
         partners = None
         update_user('Writing maps to {}/dmifs.'.format(directory), logger)
         for map_format in map_formats:
@@ -128,7 +129,7 @@ if __name__ == '__main__':
             dmif = pickle_reader(config.get('exclusion volume parameters', 'dmif'), 'dmif', logger)
         shape_cutoff, restrictive = exclusion_volume_parameters(config)
         evs = generate_exclusion_volumes(dmif, directory, debugging, shape_cutoff, restrictive)
-        pickle_writer(evs, 'exclusion_volumes', '/'.join([directory, 'data']), logger)
+        pickle_writer(evs, 'exclusion_volumes', '/'.join([directory, 'data']))
     # generating features
     if config.has_section('feature parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('feature parameters')]))
@@ -154,7 +155,7 @@ if __name__ == '__main__':
                 process.join()
         update_user('Generated {} features.'.format(len(results)), logger)
         features = renumber_features(results)
-        pickle_writer(features, 'features', '/'.join([directory, 'data']), logger)
+        pickle_writer(features, 'features', '/'.join([directory, 'data']))
     # pharmacophore generation
     if config.has_section('pharmacophore parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('pharmacophore parameters')]))
@@ -203,12 +204,12 @@ if __name__ == '__main__':
     if config.has_section('centroid parameters'):
         update_user('Starting screening of protein conformations.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('centroid parameters')]))
-        ligand, pharmacophore, topology, trajectories, first_frame, last_frame, total_number_of_frames, metal_names, \
-            output_name, number_of_processes = centroid_parameters(config)
+        ligand, pharmacophore_path, topology, trajectories, first_frame, last_frame, total_number_of_frames, \
+            metal_names, output_name, number_of_processes = centroid_parameters(config)
         frame_counter = multiprocessing.Value('i', 0)
         trajectory_time = time.time()
         processes = [multiprocessing.Process(target=screen_protein_conformations, args=(topology, trajectory,
-                     pharmacophore, ligand, counter, first_frame, last_frame, metal_names, directory, output_name,
+                     pharmacophore_path, ligand, counter, first_frame, last_frame, metal_names, directory, output_name,
                      debugging, total_number_of_frames, frame_counter, trajectory_time)) for counter, trajectory in
                      enumerate(trajectories)]
         if len(trajectories) > 1:

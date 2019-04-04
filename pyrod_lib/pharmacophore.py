@@ -4,12 +4,10 @@ This module contains functions to generate features and pharmacophores.
 """
 
 # python standard libraries
-import copy
 from itertools import combinations
 import os
 import sys
 import time
-import xml.etree.ElementTree as et
 
 # external libraries
 import numpy as np
@@ -132,7 +130,6 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
     7 - score
     """
     logger = setup_logger('_'.join(['features', feature_type]), directory, debugging)
-    #update_user('Starting {} feature generation.'.format(feature_type), logger)
     if partner_path is None:
         partner_path = directory + '/data'
     if feature_type in grid_list_dict.keys():

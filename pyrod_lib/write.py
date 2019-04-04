@@ -4,17 +4,11 @@ This module contains helper functions to write out data.
 """
 
 # python standard libraries
-import copy
-import time
-from itertools import starmap
 import logging
 import os
 import pickle
 import sys
 import xml.etree.ElementTree as et
-
-# external libraries
-import numpy as np
 
 # pyrod modules
 try:
@@ -363,10 +357,9 @@ def dmif_writer(scores, positions, file_format, name, directory, logger):
     return
 
 
-def pickle_writer(data, name, directory, logger):
+def pickle_writer(data, name, directory):
     """ This function writes data using the pickle module. """
     name = '{}.pkl'.format(name)
-    update_user('Writing {} to {}.'.format(name, directory), logger)
     file_path(name, directory)
     with open('{}/{}'.format(directory, name), 'wb') as file:
         pickle.dump(data, file, pickle.HIGHEST_PROTOCOL)

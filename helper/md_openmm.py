@@ -1,3 +1,8 @@
+#!/usr/bin/python
+
+""" This script runs MD simulations as replica in a serial fashion with OpenMM and automatically converts the output
+with vmd by centering the protein in the water box and by aligning on heavy atoms of the protein of the first frame. """
+
 import simtk.openmm.app as app
 import simtk.openmm as mm
 import simtk.unit as unit
@@ -25,27 +30,27 @@ water_model_solvate = 'amber14/tip3p.xml'
 directory = directory + '/'
 
 # create tcl-file for vmd conversion
-with open(directory + '/md_conversion.tcl', 'w') as file:
+with open(directory + 'md_conversion.tcl', 'w') as file:
     file.write(
         'package require pbctools\n' +
-         'pbc wrap -centersel protein -center com -compound res -all\n' +
-         'proc fitframes { molid seltext } {\n' +
-         '  set ref [atomselect \$molid \$seltext frame 0]\n' +
-         '  set sel [atomselect \$molid \$seltext]\n' +
-         '  set all [atomselect \$molid all]\n' +
-         '  set n [molinfo \$molid get numframes]\n' +
-         '\n' +
-         '  for { set i 1 } { \$i < \$n } { incr i } {\n' +
-         '    \$sel frame \$i\n' +
-         '    \$all frame \$i\n' +
-         '    \$all move [measure fit \$sel \$ref]\n' +
-         '  }\n' +
-         '  return\n' +
-         '}\n' +
-         'fitframes top backbone\n' +
-         'animate write pdb mds_prep/\$argv.pdb beg 0 end 0\n' +
-         'animate write dcd mds_prep/\$argv.dcd beg 1 end -1\n' +
-         'quit\n'
+        'pbc wrap -centersel protein -center com -compound res -all\n' +
+        'proc fitframes { molid seltext } {\n' +
+        '  set ref [atomselect \$molid \$seltext frame 0]\n' +
+        '  set sel [atomselect \$molid \$seltext]\n' +
+        '  set all [atomselect \$molid all]\n' +
+        '  set n [molinfo \$molid get numframes]\n' +
+        '\n' +
+        '  for { set i 1 } { \$i < \$n } { incr i } {\n' +
+        '    \$sel frame \$i\n' +
+        '    \$all frame \$i\n' +
+        '    \$all move [measure fit \$sel \$ref]\n' +
+        '  }\n' +
+        '  return\n' +
+        '}\n' +
+        'fitframes top backbone\n' +
+        'animate write pdb mds_prep/\$argv.pdb beg 0 end 0\n' +
+        'animate write dcd mds_prep/\$argv.dcd beg 1 end -1\n' +
+        'quit\n'
         )
 
 # create solvated system

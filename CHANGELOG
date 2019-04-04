@@ -1,6 +1,11 @@
+* v0.7.3
  - uses less memory
+ - support of pdb pharmacophore format for library and centroid generation
+ - pdb pharmacophore format with directionality
  - changed internal pharmacophore format
+ - renamed folders, files and functions
  - improved helper scripts
+ - minor changes
 * v0.7.2
  - added h2o dmif
  - added centroid feature
