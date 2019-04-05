@@ -1,4 +1,5 @@
 * v0.7.3
+ - added step size for trajectory analysis and centroid generation
  - uses less memory
  - support of pdb pharmacophore format for library and centroid generation
  - pdb pharmacophore format with directionality

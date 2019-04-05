@@ -86,8 +86,9 @@ if __name__ == '__main__':
     if config.has_section('trajectory analysis parameters'):
         update_user('Starting trajectory analysis.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('trajectory analysis parameters')]))
-        center, edge_lengths, topology, trajectories, first_frame, last_frame, total_number_of_frames, metal_names, \
-            map_formats, number_of_processes, get_partners = trajectory_analysis_parameters(config)
+        center, edge_lengths, topology, trajectories, first_frame, last_frame, step_size, total_number_of_frames, \
+            metal_names, map_formats, number_of_processes, get_partners = trajectory_analysis_parameters(config,
+                                                                                                         debugging)
         update_user('Initializing grid.', logger)
         grid_score, grid_partners = dmif_data_structure(generate_grid(center, edge_lengths), get_partners)
         manager = multiprocessing.Manager()
@@ -95,13 +96,14 @@ if __name__ == '__main__':
         frame_counter = multiprocessing.Value('i', 0)
         trajectory_time = time.time()
         processes = [multiprocessing.Process(target=trajectory_analysis, args=(topology, trajectory, grid_score,
-                     grid_partners, frame_counter, total_number_of_frames, first_frame, last_frame, metal_names,
-                     counter, directory, debugging, get_partners, trajectory_time, results)) for counter, trajectory in
-                     enumerate(trajectories)]
+                     grid_partners, frame_counter, total_number_of_frames, first_frame, last_frame, step_size,
+                     metal_names, counter, directory, debugging, get_partners, trajectory_time, results)) for counter,
+                     trajectory in enumerate(trajectories)]
         if len(trajectories) > 1:
-            update_user('Analyzing {} trajectories.'.format(len(trajectories)), logger)
+            update_user('Analyzing {} frames from {} trajectories.'.format(total_number_of_frames, len(trajectories)),
+                        logger)
         else:
-            update_user('Analyzing 1 trajectory.', logger)
+            update_user('Analyzing {} frames from 1 trajectory.'.format(total_number_of_frames), logger)
         for chunk in chunks(processes, number_of_processes):
             for process in chunk:
                 process.start()
@@ -204,18 +206,20 @@ if __name__ == '__main__':
     if config.has_section('centroid parameters'):
         update_user('Starting screening of protein conformations.', logger)
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('centroid parameters')]))
-        ligand, pharmacophore_path, topology, trajectories, first_frame, last_frame, total_number_of_frames, \
-            metal_names, output_name, number_of_processes = centroid_parameters(config)
+        ligand, pharmacophore_path, topology, trajectories, first_frame, last_frame, step_size, \
+            total_number_of_frames, metal_names, output_name, number_of_processes = centroid_parameters(config,
+                                                                                                        debugging)
         frame_counter = multiprocessing.Value('i', 0)
         trajectory_time = time.time()
         processes = [multiprocessing.Process(target=screen_protein_conformations, args=(topology, trajectory,
-                     pharmacophore_path, ligand, counter, first_frame, last_frame, metal_names, directory, output_name,
-                     debugging, total_number_of_frames, frame_counter, trajectory_time)) for counter, trajectory in
-                     enumerate(trajectories)]
+                     pharmacophore_path, ligand, counter, first_frame, last_frame, step_size, metal_names, directory,
+                     output_name, debugging, total_number_of_frames, frame_counter, trajectory_time)) for counter,
+                     trajectory in enumerate(trajectories)]
         if len(trajectories) > 1:
-            update_user('Analyzing {} trajectories.'.format(len(trajectories)), logger)
+            update_user('Analyzing {} frames from {} trajectories.'.format(total_number_of_frames, len(trajectories)),
+                        logger)
         else:
-            update_user('Analyzing 1 trajectory.', logger)
+            update_user('Analyzing {} frames from 1 trajectory.'.format(total_number_of_frames), logger)
         for chunk in chunks(processes, number_of_processes):
             for process in chunk:
                 process.start()

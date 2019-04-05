@@ -45,7 +45,7 @@ except ImportError:
 
 
 def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_counter, total_number_of_frames,
-                        first_frame, last_frame, metal_names, counter, directory, debugging, get_partners,
+                        first_frame, last_frame, step_size, metal_names, counter, directory, debugging, get_partners,
                         trajectory_time, results):
     logger = setup_logger('_'.join(['dmif_trajectory', str(counter)]), directory, debugging)
     logger.info('Started analysis of trajectory {}.'.format(counter))
@@ -70,7 +70,7 @@ def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_c
     pi_atomids = pi_selection(main_atoms)
     ai_atomids = ai_selection(main_atoms)
     metal_atomids = metal_selection(topology, metal_names)
-    for frame, _ in enumerate(u.trajectory[first_frame:last_frame:]):
+    for frame, _ in enumerate(u.trajectory[first_frame:last_frame:step_size]):
         # create index collectors
         shape_inds = []
         ha_inds = []
@@ -321,8 +321,8 @@ def trajectory_analysis(topology, trajectory, grid_score, grid_partners, frame_c
 
 
 def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligand_path, counter, first_frame,
-                                 last_frame, metal_names, directory, output_name, debugging, total_number_of_frames,
-                                 frame_counter, trajectory_time):
+                                 last_frame, step_size, metal_names, directory, output_name, debugging,
+                                 total_number_of_frames, frame_counter, trajectory_time):
     dcd_name = 'ensemble_' + str(counter) + '.dcd'
     output_directory = '/'.join([directory, output_name])
     file_path(dcd_name, output_directory)
@@ -367,7 +367,7 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                     PDB.write(protein)
     frame_collector = []
     with mda.Writer('/'.join([output_directory, dcd_name]), n_atoms=protein.n_atoms) as DCD:
-        for frame, _ in enumerate(u.trajectory[first_frame:last_frame:]):
+        for frame, _ in enumerate(u.trajectory[first_frame:last_frame:step_size]):
             positions = u.atoms.positions
             matched_features = 0
             for feature in features:

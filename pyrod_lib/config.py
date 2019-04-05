@@ -26,23 +26,28 @@ def test_grid_parameters(config):
     return [center, edge_lengths, name]
 
 
-def trajectory_analysis_parameters(config):
+def trajectory_analysis_parameters(config, debugging):
     center = [int(x.strip()) for x in config.get('trajectory analysis parameters', 'center').split(',')]
     edge_lengths = [int(x.strip()) for x in config.get('trajectory analysis parameters', 'edge lengths').split(',')]
     topology = config.get('trajectory analysis parameters', 'topology')
     trajectories = [x.strip() for x in config.get('trajectory analysis parameters', 'trajectories').split(',')]
-    first_frame = 0
+    first_frame = None
     if len(config.get('trajectory analysis parameters', 'first frame')) > 0:
-        first_frame = int(config.get('trajectory analysis parameters', 'first frame')) - 1
+        first_frame = int(config.get('trajectory analysis parameters', 'first frame')) - 1  # convert to zero-based
     last_frame = None
     if len(config.get('trajectory analysis parameters', 'last frame')) > 0:
         last_frame = int(config.get('trajectory analysis parameters', 'last frame'))
-    if last_frame is None:
+    step_size = None
+    if len(config.get('trajectory analysis parameters', 'step size')) > 0:
+        step_size = int(config.get('trajectory analysis parameters', 'step size'))
+    if debugging:
+        total_number_of_frames = len(mda.Universe(trajectories[0]).trajectory[first_frame:last_frame:step_size]) * \
+            len(trajectories)
+    else:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            total_number_of_frames = (len(mda.Universe(trajectories[0]).trajectory) - first_frame) * len(trajectories)
-    else:
-        total_number_of_frames = (last_frame - first_frame) * len(trajectories)
+            total_number_of_frames = len(mda.Universe(trajectories[0]).trajectory[first_frame:last_frame:step_size]) * \
+                len(trajectories)
     metal_names = [x.strip() for x in config.get('trajectory analysis parameters', 'metal names').split(',')]
     map_formats = []
     if len(config.get('trajectory analysis parameters', 'map formats')) > 0:
@@ -52,8 +57,8 @@ def trajectory_analysis_parameters(config):
     if config.has_option('trajectory analysis parameters', 'dmifs only'):
         if config.get('trajectory analysis parameters', 'dmifs only') == 'true':
             get_partners = False
-    return [center, edge_lengths, topology, trajectories, first_frame, last_frame, total_number_of_frames, metal_names,
-            map_formats, number_of_processes, get_partners]
+    return [center, edge_lengths, topology, trajectories, first_frame, last_frame, step_size, total_number_of_frames,
+            metal_names, map_formats, number_of_processes, get_partners]
 
 
 def exclusion_volume_parameters(config):
@@ -138,28 +143,33 @@ def dmif_excess_parameters(config):
     return [dmif1_path, dmif2_path, dmif1_name, dmif2_name, map_formats]
 
 
-def centroid_parameters(config):
+def centroid_parameters(config, debugging):
     ligand = config.get('centroid parameters', 'ligand')
     pharmacophore = config.get('centroid parameters', 'pharmacophore')
     topology = config.get('centroid parameters', 'topology')
     trajectories = [x.strip() for x in config.get('centroid parameters', 'trajectories').split(',')]
-    first_frame = 0
+    first_frame = None
     if len(config.get('centroid parameters', 'first frame')) > 0:
-        first_frame = int(config.get('centroid parameters', 'first frame')) - 1
+        first_frame = int(config.get('centroid parameters', 'first frame')) - 1  # convert to zero-based
     last_frame = None
     if len(config.get('centroid parameters', 'last frame')) > 0:
         last_frame = int(config.get('centroid parameters', 'last frame'))
-    if last_frame is None:
+    step_size = None
+    if len(config.get('centroid parameters', 'step size')) > 0:
+        step_size = int(config.get('centroid parameters', 'step size'))
+    if debugging:
+        total_number_of_frames = len(mda.Universe(trajectories[0]).trajectory[first_frame:last_frame:step_size]) * \
+                                 len(trajectories)
+    else:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            total_number_of_frames = (len(mda.Universe(trajectories[0]).trajectory) - first_frame) * len(trajectories)
-    else:
-        total_number_of_frames = (last_frame - first_frame) * len(trajectories)
+            total_number_of_frames = len(mda.Universe(trajectories[0]).trajectory[first_frame:last_frame:step_size]) * \
+                                     len(trajectories)
     metal_names = [x.strip() for x in config.get('centroid parameters', 'metal names').split(',')]
     if len(config.get('centroid parameters', 'output name')) > 0:
         output_name = config.get('centroid parameters', 'output name')
     else:
         output_name = 'centroid'
     number_of_processes = int(config.get('centroid parameters', 'number of processes'))
-    return [ligand, pharmacophore, topology, trajectories, first_frame, last_frame, total_number_of_frames,
+    return [ligand, pharmacophore, topology, trajectories, first_frame, last_frame, step_size, total_number_of_frames,
             metal_names, output_name, number_of_processes]
