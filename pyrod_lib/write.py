@@ -63,24 +63,24 @@ def pdb_pharmacophore(features, directory, name, weight):
     ------------------------------------------------------------------------------
                    0   1 2   3           4       5       6     7     8
     ------------------------------------------------------------------------------
-    ATOM      1    C  hi M   1      11.579  13.109  10.857  2.00164.07           X
-    ATOM      2    C  pi M   2      11.579  13.109  10.857  1.50 30.32           X
-    ATOM      3    C  ni M   3      11.579  13.109  10.857  1.50 29.57           X
-    ATOM      4    C  ai M   4      11.579  13.109  10.857  1.50 40.30           X
-    ATOM      5    P  ai M   4      11.579  14.109  10.857  0.44 40.30           X
-    ATOM      6    C  hd M   5      11.579  13.109  10.857  1.50 50.07           X
-    ATOM      7    P  hd M   5      11.579  15.709  10.857  1.95 50.07           X
-    ATOM      8    C  ha M   6      11.579  13.109  10.857  1.50 12.07           X
-    ATOM      9    P  ha M   6      14.179  13.109  10.857  1.95 12.07           X
-    ATOM     10    C hd2 O   7      11.579  13.109  10.857  1.50 23.07           X
-    ATOM     11    P hd2 O   7      11.579  15.709  10.857  1.95 23.07           X
-    ATOM     12    P hd2 O   7      14.179  13.109  10.857  1.95 23.07           X
-    ATOM     13    C ha2 M   8      11.579  13.109  10.857  1.50 37.07           X
-    ATOM     14    P ha2 M   8      11.579  15.709  10.857  1.95 37.07           X
-    ATOM     15    P ha2 M   8      14.179  13.109  10.857  1.95 37.07           X
-    ATOM     16    C hda M   9       3.500 -22.500  -8.500  1.50 39.00           X
-    ATOM     17   Pd hda M   9       6.100 -22.500  -8.500  1.95 39.00           X
-    ATOM     18   Pa hda M   9       3.500 -19.900  -8.500  1.95 39.00           X
+    ATOM      1    C  hi M   1      11.579  13.109  10.857  2.00  1.00           X
+    ATOM      2    C  pi M   2      11.579  13.109  10.857  1.50  1.00           X
+    ATOM      3    C  ni M   3      11.579  13.109  10.857  1.50  0.57           X
+    ATOM      4    C  ai M   4      11.579  13.109  10.857  1.50  1.00           X
+    ATOM      5    P  ai M   4      11.579  14.109  10.857  0.44  1.00           X
+    ATOM      6    C  hd M   5      11.579  13.109  10.857  1.50  1.00           X
+    ATOM      7    P  hd M   5      11.579  15.709  10.857  1.95  1.00           X
+    ATOM      8    C  ha M   6      11.579  13.109  10.857  1.50  0.89           X
+    ATOM      9    P  ha M   6      14.179  13.109  10.857  1.95  0.89           X
+    ATOM     10    C hd2 O   7      11.579  13.109  10.857  1.50  0.21           X
+    ATOM     11    P hd2 O   7      11.579  15.709  10.857  1.95  0.21           X
+    ATOM     12    P hd2 O   7      14.179  13.109  10.857  1.95  0.21           X
+    ATOM     13    C ha2 M   8      11.579  13.109  10.857  1.50  0.19           X
+    ATOM     14    P ha2 M   8      11.579  15.709  10.857  1.95  0.19           X
+    ATOM     15    P ha2 M   8      14.179  13.109  10.857  1.95  0.19           X
+    ATOM     16    C hda M   9       3.500 -22.500  -8.500  1.50  0.17           X
+    ATOM     17   Pd hda M   9       6.100 -22.500  -8.500  1.95  0.17           X
+    ATOM     18   Pa hda M   9       3.500 -19.900  -8.500  1.95  0.17           X
     ATOM     19    C  ev M  10      11.579  13.109  10.857  1.00  0.00           X
     END
     ------------------------------------------------------------------------------
@@ -117,6 +117,7 @@ def pdb_pharmacophore(features, directory, name, weight):
                 pharmacophore.append(pdb_line(atomid, part, feature[1], feature[2], feature[0], feature[5][1],
                                               feature[6], feature_weight, 'X'))
                 atomid += 1
+    pharmacophore.append('END\n')
     with open('{}/{}'.format(directory, name), 'w') as pharmacophore_file:
         pharmacophore_file.write(''.join(pharmacophore))
     return
