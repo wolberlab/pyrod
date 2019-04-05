@@ -25,7 +25,7 @@ conda create -n pyrod mdanalysis python=3.6
 ```
 #### Create alias for your bash
 ```bash
-echo 'alias pyrod="python ~/pyrod/pyrod.py"' >> ~/.bashrc
+echo 'alias pyrod="python3 ~/pyrod/pyrod.py"' >> ~/.bashrc
 ```
 ## Run PyRod
 #### Load conda environment (optional)
