@@ -1,4 +1,6 @@
 * v0.7.3
+ - using feature core tolerance for clashes between features and heavy atoms in centroid generation
+ - added angle dependency for ha features in centroid generation
  - added step size for trajectory analysis and centroid generation
  - uses less memory
  - support of pdb pharmacophore format for library and centroid generation

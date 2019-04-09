@@ -225,7 +225,7 @@ if __name__ == '__main__':
                 process.start()
             for process in chunk:
                 process.join()
-        update_user('Finding centroid of matched protein conformations.', logger)
+        update_user('Finding centroid generation.', logger)
         if debugging:
             ensemble_to_centroid(topology, trajectories, output_name, directory, debugging)
         else:

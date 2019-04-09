@@ -27,8 +27,8 @@ try:
         cross_product
     from pyrod.pyrod_lib.read import pharmacophore_reader
     from pyrod.pyrod_lib.trajectory_helper import main_selection, hd_selection, ha_selection, hi_selection, \
-        ni_selection, pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, \
-        ai_geometry, t_stacking_partner_position
+        ni_selection, pi_selection, ai_selection, metal_selection, heavy_atom_selection, buriedness, \
+        pi_stacking_partner_position, ai_geometry, t_stacking_partner_position
     from pyrod.pyrod_lib.write import setup_logger, file_path, update_user, update_progress
 except ImportError:
     from pyrod_lib.grid import grid_characteristics, grid_partners_to_array
@@ -39,8 +39,8 @@ except ImportError:
         cross_product
     from pyrod_lib.read import pharmacophore_reader
     from pyrod_lib.trajectory_helper import main_selection, hd_selection, ha_selection, hi_selection, \
-        ni_selection, pi_selection, ai_selection, metal_selection, buriedness, pi_stacking_partner_position, \
-        ai_geometry, t_stacking_partner_position
+        ni_selection, pi_selection, ai_selection, metal_selection, heavy_atom_selection, buriedness, \
+        pi_stacking_partner_position, ai_geometry, t_stacking_partner_position
     from pyrod_lib.write import setup_logger, file_path, update_user, update_progress
 
 
@@ -346,7 +346,8 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                          u.atoms.types)], dtype=dtype)
     main_atoms = main_selection(topology)
     main_atomids = main_atoms['atomid']
-    hd_atomids = hd_selection(main_atoms)[0]
+    heavy_atomids = heavy_atom_selection(main_atoms)
+    hd_atomids, hd_types, hydrogen_atomid_lists = hd_selection(main_atoms)
     ha_atomids = ha_selection(main_atoms)[0]
     hi_atomids = hi_selection(main_atoms)
     ni_atomids = ni_selection(main_atoms)
@@ -391,11 +392,19 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                 elif feature_type == 'ha':
                     if len(hd_atomids) > 0:
                         hd_positions = positions[hd_atomids]
-                        hd += np.sum((cdist(partner_position.reshape(1, 3), hd_positions) <= partner_tolerance)[0])
+                        hd_bools = (cdist(partner_position.reshape(1, 3), hd_positions) <= partner_tolerance)[0]
+                        matched_hd_positions = hd_positions[hd_bools]
+                        matched_hd_types = hd_types[hd_bools]
+                        matched_hydrogen_atomid_lists = hydrogen_atomid_lists[hd_bools]
+                        for matched_hd_position, matched_hd_type, matched_hydrogen_atomid_list in \
+                                zip(matched_hd_positions, matched_hd_types, matched_hydrogen_atomid_lists):
+                            for matched_hydrogen_atomid in matched_hydrogen_atomid_list:
+                                if angle(feature_position, positions[matched_hydrogen_atomid], matched_hd_position) >= \
+                                        hb_angl_dict[matched_hd_type]:
+                                    hd = 1
                     if len(metal_atomids) > 0:
                         metal_positions = positions[metal_atomids]
-                        hd += np.sum((cdist(partner_position.reshape(1, 3), metal_positions) <=
-                                      partner_tolerance)[0])
+                        hd += np.sum((cdist(partner_position.reshape(1, 3), metal_positions) <= partner_tolerance)[0])
                     if hd == 0:
                         break
                     else:
@@ -530,12 +539,16 @@ def screen_protein_conformations(topology, trajectory, pharmacophore_path, ligan
                         matched_features += 1
             if matched_features == len(features):
                 clash = False
-                main_positions = positions[main_atomids]
-                if cdist(main_positions, np.array([feature[3] for feature in features])).min() < CLASH_CUTOFF:
-                    clash = True
-                if ligand_path:
-                    if cdist(main_positions, ligand_positions).min() < CLASH_CUTOFF:
+                heavy_atom_positions = positions[heavy_atomids]
+                for feature in features:
+                    core_tolerance = feature[4]
+                    if cdist(np.array([feature[3]]), heavy_atom_positions).min() < core_tolerance:
                         clash = True
+                if not clash:
+                    if ligand_path:
+                        main_positions = positions[main_atomids]
+                        if cdist(main_positions, ligand_positions).min() < CLASH_CUTOFF:
+                            clash = True
                 if not clash:
                     DCD.write(protein)
                     frame_collector.append(frame + first_frame)

@@ -52,6 +52,15 @@ def main_selection(topology):
     return selection
 
 
+def heavy_atom_selection(main_atoms):
+    """ This function returns all atomids for heavy atoms from the main selection. """
+    atomids = []
+    for atom in main_atoms:
+        if atom['type'] != 'H':
+            atomids.append(atom['atomid'])
+    return np.array(atomids)
+
+
 def hd_selection(main_atoms):
     """ This function returns all hydrogen bond donor atomids, their element types and the hydrogen atom ids for each
     donor from the main selection. """
@@ -71,7 +80,7 @@ def hd_selection(main_atoms):
                 atomids.append(atom['atomid'])
                 types.append(atom['type'])
                 hydrogen_atomid_lists += [hydrogen_atomids]
-    return np.array(atomids), np.array(types), hydrogen_atomid_lists
+    return np.array(atomids), np.array(types), np.array(hydrogen_atomid_lists)
 
 
 def ha_selection(main_atoms):
