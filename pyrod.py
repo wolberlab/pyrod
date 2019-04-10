@@ -1,7 +1,9 @@
 """ PyRod - dynamic molecular interaction fields (dMIFs), based on tracing water molecules in MD simulations.
 
+Released under the GNU Public Licence v2.
+
 This is the main script to run PyRod from the command line for analyzing molecular dynamics simulations and generating
-dMIFs and pharmacophores.
+dMIFs, pharmacophores and centroids.
 """
 
 # python standard libraries

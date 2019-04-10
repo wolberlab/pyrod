@@ -6,6 +6,7 @@
 # protein in the water box and by aligning on heavy atoms of the protein of   #
 # the first frame. Place this script in the folder with the cms-, msj- and    #
 # cfg-file and change variables according to your system setup and project.   #
+# Released under the GNU Public Licence v2.                                   #
 ###############################################################################
 
 # @author david schaller

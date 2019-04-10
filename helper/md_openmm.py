@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
 """ This script runs MD simulations as replica in a serial fashion with OpenMM and automatically converts the output
-with vmd by centering the protein in the water box and by aligning on heavy atoms of the protein of the first frame. """
+with vmd by centering the protein in the water box and by aligning on heavy atoms of the protein of the first frame.
+
+Released under the GNU Public Licence v2.
+"""
 
 import simtk.openmm.app as app
 import simtk.openmm as mm

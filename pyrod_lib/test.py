@@ -1,6 +1,8 @@
 """ PyRod - dynamic molecular interaction fields (dMIFs), based on tracing water molecules in MD simulations.
 
-This module is used for to perform unit tests.
+Released under the GNU Public Licence v2.
+
+This module is used to perform unit tests.
 """
 
 
