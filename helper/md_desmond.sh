@@ -59,15 +59,15 @@ do
   fi
   mkdir ${counter}
   echo "Copying files for ${counter} ..."
-  cp desmond_md_job_1.msj desmond_md_job_1.cms ${counter}
-  sed "s/seed = 2007/seed = $((2007+${counter}))/" desmond_md_job_1.cfg > ${counter}/desmond_md_job_1.cfg
+  cp ${msj} ${cms} ${counter}
+  sed "s/seed = 2007/seed = $((2007+${counter}))/" ${cfg} > ${counter}/${cfg}
   cd ${counter}
   echo "Running replica ${counter} ..."
   ${SCHRODINGER}/utilities/multisim \
     -JOBNAME ${name}_${counter} \
-    desmond_md_job_1.cms \
-    -m desmond_md_job_1.msj \
-    -c desmond_md_job_1.cfg \
+    ${cms} \
+    -m ${msj} \
+    -c ${cfg} \
     -o ${name}_${counter}-out.cms \
     -mode umbrella \
     -set 'stage[1].set_family.md.jlaunch_opt=["-gpu"]' \
