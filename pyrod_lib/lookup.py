@@ -22,7 +22,7 @@ hb_angl_dict = {'O': 130, 'N': 130, 'S': 130}  # (Bissantz 2010, Mills 1996, Zho
 """ Maximal angle for interaction of aromatic center with positive ionizable. """
 CATION_PI_ANGLE_CUTOFF = 30  # (Marshall 2009)
 """ Minimal allowed distance between two atoms. """
-CLASH_CUTOFF = 2.2  # van der Waals radius of hydrogen x 2 (Rowland 1996)
+CLASH_CUTOFF = 1.5  # corresponds to the distance between hydrogen and acceptor in a short hydrogen bond
 ########################################################################################################################
 # Section for handling of topology. Can be adjusted by the user to include e.g. co-factors and other water models in   #
 # analysis.                                                                                                            #
