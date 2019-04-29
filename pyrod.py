@@ -112,8 +112,13 @@ if __name__ == '__main__':
             for process in chunk:
                 process.join()
         update_user('Processing results.', logger)
-        dmif, partners = post_processing(results, total_number_of_frames)
+        # convert multiprocessing list to true python list
+        results_list = []
+        for x in results:
+            results_list.append(x)
         results = None
+        dmif, partners = post_processing(results_list, total_number_of_frames)
+        results_list = None
         update_user('Writing raw data to {}/data.'.format(directory), logger)
         pickle_writer(dmif, 'dmif', '{}/{}'.format(directory, 'data'))
         if get_partners:
