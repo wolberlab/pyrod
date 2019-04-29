@@ -52,7 +52,7 @@ def pdb_grid(positions, name, directory):
     name = '{}.pdb'.format(name)
     file_path(name, directory)
     with open('{}/{}'.format(directory, name), 'w') as pdb_file:
-        lines = [pdb_line(counter + 1, 'X', 'GRI', 'A', counter + 1, position, 0, 0, 'X') for counter, position in
+        lines = [pdb_line(counter + 1, 'X', 'GRI', 'A', 1, position, 0, 0, 'X') for counter, position in
                  enumerate(positions)]
         pdb_file.write(''.join(lines))
     return
