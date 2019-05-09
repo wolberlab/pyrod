@@ -221,14 +221,10 @@ def metal_selection(topology, metal_names):
 def position_angle_test(position_to_test, center_position, positions, cutoff):
     """ This function returns True if all possible angles between the position_to_test, center_position and all
     positions are equal or bigger than the specified cutoff. """
-    test = True
-    while test:
-        for position in positions:
-            if angle(position_to_test, center_position, position) < cutoff:
-                test = False
-                break
-        break
-    return test
+    for position in positions:
+        if angle(position_to_test, center_position, position) < cutoff:
+            return False
+    return True
 
 
 def buriedness(center_position, positions):
