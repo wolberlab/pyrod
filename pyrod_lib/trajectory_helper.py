@@ -236,7 +236,7 @@ def buriedness(center_position, positions):
     while len(positions) > 0:
         if origin_position is None:
             angle_maximum, position_index, position_index_2 = maximal_angle(positions, center_position)
-            if angle_maximum > angle_cutoff:
+            if angle_maximum >= angle_cutoff:
                 origin_position = positions[position_index]
                 positions_used.append(positions[position_index])
                 positions_used.append(positions[position_index_2])
