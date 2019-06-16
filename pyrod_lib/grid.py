@@ -7,6 +7,7 @@ This module contains functions needed to generate and process grid data structur
 
 
 # python standard library
+from collections import OrderedDict
 import copy
 import operator
 import pickle
@@ -126,3 +127,13 @@ def generate_dmif_excess(dmif1_path, dmif2_path):
     else:
         print('Specified dmifs were not generated with the same grid parameters.')
         sys.exit()
+
+
+def get_point_properties(point, dmif_path):
+    with open(dmif_path, 'rb') as file:
+        dmif = pickle.load(file)
+    point_properties = dmif[(dmif['x'] == point[0]) & (dmif['y'] == point[1]) & (dmif['z'] == point[2])]
+    point_properties_dict = OrderedDict()
+    for point_property in point_properties.dtype.names:
+        point_properties_dict[point_property] = round(point_properties[point_property][0], 2)
+    return point_properties_dict

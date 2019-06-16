@@ -19,10 +19,11 @@ import numpy as np
 
 # pyrod modules
 try:
-    from pyrod.pyrod_lib.grid import generate_grid, dmif_data_structure, post_processing, generate_dmif_excess
+    from pyrod.pyrod_lib.grid import generate_grid, dmif_data_structure, post_processing, generate_dmif_excess, \
+        get_point_properties
     from pyrod.pyrod_lib.config import test_grid_parameters, trajectory_analysis_parameters, \
         exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters, \
-        dmif_excess_parameters, centroid_parameters
+        dmif_excess_parameters, centroid_parameters, point_properties_parameters
     from pyrod.pyrod_lib.lookup import logo, __version__, grid_list_dict, feature_types
     from pyrod.pyrod_lib.pharmacophore import generate_exclusion_volumes, generate_features, generate_library
     from pyrod.pyrod_lib.pharmacophore_helper import select_features, renumber_features
@@ -31,10 +32,11 @@ try:
     from pyrod.pyrod_lib.write import file_path, pdb_grid, dmif_writer, pharmacophore_writer, pickle_writer, \
         setup_logger, update_user, time_to_text
 except ImportError:
-    from pyrod_lib.grid import generate_grid, dmif_data_structure, post_processing, generate_dmif_excess
+    from pyrod_lib.grid import generate_grid, dmif_data_structure, post_processing, generate_dmif_excess, \
+        get_point_properties
     from pyrod_lib.config import test_grid_parameters, trajectory_analysis_parameters, \
         exclusion_volume_parameters, feature_parameters, pharmacophore_parameters, library_parameters, \
-        dmif_excess_parameters, centroid_parameters
+        dmif_excess_parameters, centroid_parameters, point_properties_parameters
     from pyrod_lib.lookup import logo, __version__, grid_list_dict, feature_types
     from pyrod_lib.pharmacophore import generate_exclusion_volumes, generate_features, generate_library
     from pyrod_lib.pharmacophore_helper import select_features, renumber_features
@@ -84,6 +86,14 @@ if __name__ == '__main__':
                     space += 0.5
                 else:
                     space += 1
+    # point properties
+    if config.has_section('point properties parameters'):
+        logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('point properties parameters')]))
+        point, dmif_path = point_properties_parameters(config)
+        update_user('Getting point properties from {}.'.format(dmif_path), logger)
+        point_properties_dict = get_point_properties(point, dmif_path)
+        for key, value in point_properties_dict.items():
+            update_user('{}: {}'.format(key, value), logger)
     # trajectory analysis
     if config.has_section('trajectory analysis parameters'):
         update_user('Starting trajectory analysis.', logger)
