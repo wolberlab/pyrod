@@ -1,7 +1,7 @@
 <img src="https://github.com/schallerdavid/pyrod/blob/master/pyrod_logo.png" height="200">
 
 PyRod is a python software developed to generate dynamic molecular interaction fields (dMIFs) and pharmacophore features based on analyzing the protein environment of water molecules in molecular dynamcis simulations.
-Check the [PyRod wiki](https://github.com/schallerdavid/pyrod/wiki) for more information on installation and usage.
+Check the [PyRod wiki](https://github.com/schallerdavid/pyrod/wiki) for more information on installation and usage. The employed algorithms are described in the PyRod publication in [JCIM](https://doi.org/10.1021/acs.jcim.9b00281). 
 
 ## Installation
 #### Clone this repository
@@ -38,5 +38,9 @@ pyrod /path/to/pyrod_config_file.cfg
 ```
 ## Example
 An example Jupyter Notebook for visualization of dMIFs using NGLView is provided in the [example directory](https://github.com/schallerdavid/pyrod/tree/master/example).
+
+## Citation
+Please cite our paper in [JCIM](https://doi.org/10.1021/acs.jcim.9b00281) when using PyRod for your research.
+
 ## License Information
 PyRod is published under GNU General Public License v2.0. For more information read [LICENSE](https://github.com/schallerdavid/pyrod/blob/master/LICENSE).
