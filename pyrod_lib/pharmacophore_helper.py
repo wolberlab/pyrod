@@ -31,7 +31,6 @@ def get_center(positions, cutoff):
     """ This function returns the approximate position with the most neighbors within the specified cutoff. If multiple
     positions have the most neighbors, the position with the lowest standard deviation of the distances to its
     neighbors is returned. """
-    positions = np.array([[x, y, z] for x, y, z in zip(positions[0::3], positions[1::3], positions[2::3])])
     x_minimum, x_maximum, y_minimum, y_maximum, z_minimum, z_maximum = grid_characteristics(positions)[:-1]
     x_center, y_center, z_center = [round((x_minimum + x_maximum) / 2, 1), round((y_minimum + y_maximum) / 2, 1),
                                     round((z_minimum + z_maximum) / 2, 1)]
@@ -130,14 +129,23 @@ def get_partner_positions(feature_type, partner_positions_list):
     """ This function returns a list of partner positions for a pharmacophore feature with directionality. """
     partner_positions = []
     if feature_type in ['ha', 'hd', 'ha2', 'hd2', 'ai']:
-        partner_position, used_list = get_center(partner_positions_list, 1.5)
+        partner_positions_array = np.array([[x, y, z] for x, y, z in zip(
+            partner_positions_list[0::3], partner_positions_list[1::3], partner_positions_list[2::3])])
+        partner_position, used_list = get_center(partner_positions_array, 1.5)
         partner_positions.append(partner_position)
         if feature_type in ['ha2', 'hd2']:
-            partner_position2 = get_center([x for y, x in enumerate(partner_positions_list) if y not in used_list], 1.5)[0]
+            partner_position2 = get_center(
+                np.array([x for y, x in enumerate(partner_positions_array) if y not in used_list]), 1.5)[0]
             partner_positions.append(partner_position2)
     elif feature_type == 'hda':
-        partner_positions.append(get_center(partner_positions_list[0], 1.5)[0])
-        partner_positions.append(get_center(partner_positions_list[1], 1.5)[0])
+        partner_positions_array_list = [np.array([[x, y, z] for x, y, z in zip(w[0::3], w[1::3], w[2::3])]) for w in
+                                        partner_positions_list]
+        partner_positions_array1 = np.array([[x, y, z] for x, y, z in zip(
+            partner_positions_list[0][0::3], partner_positions_list[0][1::3], partner_positions_list[0][2::3])])
+        partner_positions_array2 = np.array([[x, y, z] for x, y, z in zip(
+            partner_positions_list[1][0::3], partner_positions_list[1][1::3], partner_positions_list[1][2::3])])
+        partner_positions.append(get_center(partner_positions_array1, 1.5)[0])
+        partner_positions.append(get_center(partner_positions_array2, 1.5)[0])
     return partner_positions
 
 

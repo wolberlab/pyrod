@@ -19,7 +19,7 @@ from scipy.spatial import cKDTree
 try:
     from pyrod.pyrod_lib.lookup import grid_list_dict
     from pyrod.pyrod_lib.math import distance
-    from pyrod.pyrod_lib.pharmacophore_helper import get_center, get_core_tolerance, get_maximal_core_tolerance, \
+    from pyrod.pyrod_lib.pharmacophore_helper import get_core_tolerance, get_maximal_core_tolerance, \
         get_maximal_sum_of_scores, get_partner_positions, get_partner_tolerance, evaluate_pharmacophore
     from pyrod.pyrod_lib.read import pickle_reader, pharmacophore_reader
     from pyrod.pyrod_lib.write import file_path, setup_logger, pharmacophore_writer, update_progress, update_user, \
@@ -27,7 +27,7 @@ try:
 except ImportError:
     from pyrod_lib.lookup import grid_list_dict
     from pyrod_lib.math import distance
-    from pyrod_lib.pharmacophore_helper import get_center, get_core_tolerance, get_maximal_core_tolerance, \
+    from pyrod_lib.pharmacophore_helper import get_core_tolerance, get_maximal_core_tolerance, \
         get_maximal_sum_of_scores, get_partner_positions, get_partner_tolerance, evaluate_pharmacophore
     from pyrod_lib.read import pickle_reader, pharmacophore_reader
     from pyrod_lib.write import file_path, setup_logger, pharmacophore_writer, bytes_to_text, update_progress, \
