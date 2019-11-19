@@ -129,7 +129,10 @@ def roc_analyzer(current_file, directory, number_of_actives, number_of_decoys):
     if sdf_parser('.'.join([file_name, 'sdf']), True) == 0:
         return None
     actives_scores, decoys_scores, actives_indices = sdf_parser('.'.join([file_name, 'sdf']))
-    score_array = np.vstack((np.array([[x, 1] for x in actives_scores]), np.array([[x, 0] for x in decoys_scores])))
+    if len(decoys_scores) > 0:
+        score_array = np.vstack((np.array([[x, 1] for x in actives_scores]), np.array([[x, 0] for x in decoys_scores])))
+    else:
+        score_array = np.array([[x, 1] for x in actives_scores])
     score_array = score_array[np.flipud(score_array[:, 0].argsort())]
     EFs = []
     AUCs = []
