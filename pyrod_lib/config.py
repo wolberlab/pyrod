@@ -129,10 +129,7 @@ def library_parameters(config, directory):
     pyrod_pharmacophore = True
     if config.get('library parameters', 'pyrod pharmacophore') == 'false':
         pyrod_pharmacophore = False
-    weight = False
-    if config.get('library parameters', 'weight') == 'true':
-        weight = True
-    return [pharmacophore_path, output_format, library_dict, library_path, make_mandatory, pyrod_pharmacophore, weight]
+    return [pharmacophore_path, output_format, library_dict, library_path, make_mandatory, pyrod_pharmacophore]
 
 
 def dmif_excess_parameters(config):

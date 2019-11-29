@@ -42,8 +42,8 @@ def generate_exclusion_volumes(dmif, directory, debugging, shape_cutoff, restric
     ------------------------------------------------------------------------
     0   1 2             3   4                             5          6     7
     ------------------------------------------------------------------------
-    0  ev M [0.0,0.0,0.0] 1.0                            []        0.0   0.0
-    1  ev M [2.0,0.0,0.0] 1.0                            []        0.0   0.0
+    0  ev M [0.0,0.0,0.0] 1.0                            []        0.0   1.0
+    1  ev M [2.0,0.0,0.0] 1.0                            []        0.0   1.0
     ------------------------------------------------------------------------
     Legend:
     0 - index
@@ -53,7 +53,7 @@ def generate_exclusion_volumes(dmif, directory, debugging, shape_cutoff, restric
     4 - core tolerance [not needed for exclusion volumes]
     5 - partner positions [not needed for exclusion volumes]
     6 - partner tolerance [not needed for exclusion volumes]
-    7 - score [not needed for exclusion volumes]
+    7 - weight
     """
     logger = setup_logger('exclusion_volumes', directory, debugging)
     update_user('Generating exclusion volumes.', logger)
@@ -92,7 +92,7 @@ def generate_exclusion_volumes(dmif, directory, debugging, shape_cutoff, restric
                     if len(shape_tree.query_ball_point(positions[index], r=grid_space)) == 7:
                         # grid_point should not be surrounded by grid_points outside the binding pocket
                         if len(shape_tree.query_ball_point(positions[index], r=grid_space * 2)) < 33:
-                            exclusion_volumes.append([counter, 'ev', 'M', positions[index], 1.0, [], 0.0, 0.0])
+                            exclusion_volumes.append([counter, 'ev', 'M', positions[index], 1.0, [], 0.0, 1.0])
                             counter += 1
                             used += neighbor_list
         eta = ((time.time() - start) / (index + 1)) * (shape_grid_size - (index + 1))
@@ -111,15 +111,15 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
     ------------------------------------------------------------------------
     0   1 2             3   4                             5          6     7
     ------------------------------------------------------------------------
-    0  hi M [0.0,0.0,0.0] 1.5                            []        0.0 150.1
-    1  pi M [0.0,0.0,0.0] 1.5                            []        0.0  30.1
-    2  ni M [0.0,0.0,0.0] 1.5                            []        0.0  30.1
-    3  hd M [0.0,0.0,0.0] 1.5               [[3.0,0.0,0.0]]  1.9499999  30.1
-    4  ha M [0.0,0.0,0.0] 1.5               [[3.0,0.0,0.0]]  1.9499999  30.1
-    5 hd2 M [0.0,0.0,0.0] 1.5 [[3.0,0.0,0.0],[0.0,3.0,0.0]]  1.9499999  30.1
-    6 ha2 M [0.0,0.0,0.0] 1.5 [[3.0,0.0,0.0],[0.0,3.0,0.0]]  1.9499999  30.1
-    7 hda M [0.0,0.0,0.0] 1.5 [[3.0,0.0,0.0],[0.0,3.0,0.0]]  1.9499999  30.1
-    8  ai M [0.0,0.0,0.0] 1.5               [[1.0,0.0,0.0]] 0.43633232  30.1
+    0  hi M [0.0,0.0,0.0] 1.5                            []        0.0   1.0
+    1  pi M [0.0,0.0,0.0] 1.5                            []        0.0   1.0
+    2  ni M [0.0,0.0,0.0] 1.5                            []        0.0   1.0
+    3  hd M [0.0,0.0,0.0] 1.5               [[3.0,0.0,0.0]]  1.9499999   1.0
+    4  ha M [0.0,0.0,0.0] 1.5               [[3.0,0.0,0.0]]  1.9499999   1.0
+    5 hd2 M [0.0,0.0,0.0] 1.5 [[3.0,0.0,0.0],[0.0,3.0,0.0]]  1.9499999   1.0
+    6 ha2 M [0.0,0.0,0.0] 1.5 [[3.0,0.0,0.0],[0.0,3.0,0.0]]  1.9499999   1.0
+    7 hda M [0.0,0.0,0.0] 1.5 [[3.0,0.0,0.0],[0.0,3.0,0.0]]  1.9499999   1.0
+    8  ai M [0.0,0.0,0.0] 1.5               [[1.0,0.0,0.0]] 0.43633232   1.0
     ------------------------------------------------------------------------
     Legend:
     0 - index
@@ -129,7 +129,7 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
     4 - core tolerance
     5 - partner positions (hda feature with coordinates for first donor than acceptor)
     6 - partner tolerance
-    7 - score
+    7 - weight
     """
     logger = setup_logger('_'.join(['features', feature_type]), directory, debugging)
     if partner_path is None:
@@ -177,7 +177,7 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
             else:
                 generated_features.append([index, feature_type, 'M', positions[index], core_tolerance,
                                            get_partner_positions(feature_type, partners[index]),
-                                           get_partner_tolerance(feature_type, core_tolerance), feature_scores[index]])
+                                           get_partner_tolerance(feature_type, core_tolerance), 1.0])
                 not_used = [x for x in not_used if x not in feature_indices]
                 used += feature_indices
                 with feature_counter.get_lock():
@@ -198,7 +198,7 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
 
 
 def generate_library(pharmacophore_path, output_format, library_dict, library_path, make_mandatory, pyrod_pharmacophore,
-                     weight, directory, debugging):
+                     directory, debugging):
     """ This function writes a combinatorial pharmacophore library. """
     logger = setup_logger('library', directory, debugging)
     update_user('Starting library generation.', logger)
@@ -256,7 +256,7 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
                                                               pyrod_pharmacophore):
                                         pharmacophore_library.append(pharmacophore)
     # estimate maximal library size and ask user if number and space of pharmacophores is okay
-    pharmacophore_writer(super_pharmacophore, [output_format], 'super_pharmacophore', library_path, weight, logger)
+    pharmacophore_writer(super_pharmacophore, [output_format], 'super_pharmacophore', library_path, logger)
     pharmacophore_library_size = bytes_to_text(os.path.getsize('{}/{}.{}'.format(library_path, 'super_pharmacophore',
                                                output_format)) * len(pharmacophore_library))
     user_prompt = ''
@@ -287,7 +287,7 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
                                                    feature[5][1], 1.0, [], 0.0, 0.0])
                     extra_ev_counter += 1
         pharmacophore_writer(pharmacophore + exclusion_volumes + extra_exclusion_volumes, [output_format],
-                             str(counter), library_path, weight, logger)
+                             str(counter), library_path, logger)
         update_progress((counter + 1) / len(pharmacophore_library),
                         'Writing {} pharmacophores'.format(len(pharmacophore_library)),
                         ((time.time() - start) / (counter + 1)) * (len(pharmacophore_library) - (counter + 1)))

@@ -58,7 +58,7 @@ def pdb_grid(positions, name, directory):
     return
 
 
-def pdb_pharmacophore(features, directory, name, weight):
+def pdb_pharmacophore(features, directory, name):
     """ This function generates a list of strings describing a pharmacophore that is written to a pdb file.
 
     Format:
@@ -95,14 +95,12 @@ def pdb_pharmacophore(features, directory, name, weight):
     5 - y coordinate
     6 - z coordinate
     7 - tolerance
-    8 - score
+    8 - weight
     """
     pharmacophore = []
     atomid = 1
     for feature in features:
-        feature_weight = 1.0
-        if weight:
-            feature_weight = feature[7]
+        feature_weight = feature[7]
         pharmacophore.append(pdb_line(atomid, 'C', feature[1], feature[2], feature[0], feature[3], feature[4],
                                       feature_weight, 'X'))
         atomid += 1
@@ -125,7 +123,7 @@ def pdb_pharmacophore(features, directory, name, weight):
     return
 
 
-def pml_feature_point(pharmacophore, feature, weight):
+def pml_feature_point(pharmacophore, feature):
     """ This function generates an xml branch for positive and negative ionizable features as well as hydrophobic
     interactions. """
     translate_features = {'hi': 'H', 'pi': 'PI', 'ni': 'NI'}
@@ -133,9 +131,7 @@ def pml_feature_point(pharmacophore, feature, weight):
     point_featureId = '{}_{}'.format(feature[1], feature[0])
     point_optional = 'false'
     point_disabled = 'false'
-    point_weight = '1.0'
-    if weight:
-        point_weight = str(feature[7])
+    point_weight = str(feature[7])
     position_x3, position_y3, position_z3 = str(feature[3][0]), str(feature[3][1]), str(feature[3][2])
     position_tolerance = str(feature[4])
     point_attributes = {'name': point_name, 'featureId': point_featureId, 'optional': point_optional,
@@ -146,7 +142,7 @@ def pml_feature_point(pharmacophore, feature, weight):
     return
 
 
-def pml_feature_vector(pharmacophore, feature, weight):
+def pml_feature_vector(pharmacophore, feature):
     """ This function generates an xml branch for hydrogen bonds. """
     for index in range(len(feature[5])):  # all as donor
         vector_name = 'HBD'
@@ -157,9 +153,7 @@ def pml_feature_vector(pharmacophore, feature, weight):
         vector_hasSyntheticProjectedPoint = 'false'
         vector_optional = 'false'
         vector_disabled = 'false'
-        vector_weight = '1.0'
-        if weight:
-            vector_weight = str(feature[7])
+        vector_weight = str(feature[7])
         origin_x3, origin_y3, origin_z3 = str(feature[3][0]), str(feature[3][1]), str(feature[3][2])
         origin_tolerance = str(feature[4])
         target_x3, target_y3, target_z3 = [str(feature[5][index][0]), str(feature[5][index][1]),
@@ -184,15 +178,13 @@ def pml_feature_vector(pharmacophore, feature, weight):
     return
 
 
-def pml_feature_plane(pharmacophore, feature, weight):
+def pml_feature_plane(pharmacophore, feature):
     """ This function generates an xml branch for aromatic interactions. """
     plane_name = 'AR'
     plane_featureId = '{}_{}'.format('ai', feature[0])
     plane_optional = 'false'
     plane_disabled = 'false'
-    plane_weight = '1.0'
-    if weight:
-        plane_weight = str(feature[7])
+    plane_weight = str(feature[7])
     position_x3, position_y3, position_z3 = str(feature[3][0]), str(feature[3][1]), str(feature[3][2])
     position_tolerance = str(feature[4])
     normal_x3, normal_y3, normal_z3 = [str(feature[3][0] - feature[5][0][0]), str(feature[3][1] - feature[5][0][1]),
@@ -225,28 +217,17 @@ def pml_feature_volume(pharmacophore, feature):
     return
 
 
-def pml_feature(pharmacophore, feature, weight):
+def pml_feature(pharmacophore, feature):
     """ This function distributes features according to their feature type to the appropriate feature function. """
     if feature[1] in ['hi', 'ni', 'pi']:
-        pml_feature_point(pharmacophore, feature, weight)
+        pml_feature_point(pharmacophore, feature)
     elif feature[1] in ['hd', 'hd2', 'ha', 'ha2', 'hda']:
-        pml_feature_vector(pharmacophore, feature, weight)
+        pml_feature_vector(pharmacophore, feature)
     elif feature[1] == 'ai':
-        pml_feature_plane(pharmacophore, feature, weight)
+        pml_feature_plane(pharmacophore, feature)
     elif feature[1] == 'ev':
         pml_feature_volume(pharmacophore, feature)
     return
-
-
-def normalize_weights(features):
-    """ This function normalizes the scores for each feature class. """
-    for feature_class in [['hi'], ['pi', 'ni'], ['hd', 'hd2', 'ha', 'ha2', 'hda'], ['ai']]:
-        scores = [feature[7] for feature in features if feature[1] in feature_class]
-        if len(scores) > 0:
-            maximal_score = max(scores)
-            features = [feature[:7] + [feature[7] / maximal_score] if feature[1] in feature_class
-                        else feature for feature in features]
-    return features
 
 
 def indent_xml(element, level=0):
@@ -266,18 +247,18 @@ def indent_xml(element, level=0):
             element.tail = i
 
 
-def pml_pharmacophore(features, directory, name, weight):
+def pml_pharmacophore(features, directory, name):
     """ This function generates an xml tree describing a pharmacophore that is written to a pml file. """
     pharmacophore = et.Element('pharmacophore', attrib={'name': name, 'pharmacophoreType': 'LIGAND_SCOUT'})
     for feature in features:
-        pml_feature(pharmacophore, feature, weight)
+        pml_feature(pharmacophore, feature)
     indent_xml(pharmacophore)
     tree = et.ElementTree(pharmacophore)
     tree.write('{}/{}'.format(directory, name), encoding="UTF-8", xml_declaration=True)
     return
 
 
-def pharmacophore_writer(features, file_formats, name, directory, weight, logger):
+def pharmacophore_writer(features, file_formats, name, directory, logger):
     """ This function writes out pharmacophores. """
     valid_formats = ['pml', 'pdb']
     if not all(elem in valid_formats for elem in file_formats):
@@ -285,12 +266,10 @@ def pharmacophore_writer(features, file_formats, name, directory, weight, logger
                     ', '.join(valid_formats[0:-1]), valid_formats[-1]), logger)
         sys.exit()
     file_path(name, directory)
-    if weight:
-        features = normalize_weights(features)
     if 'pdb' in file_formats:
-        pdb_pharmacophore(features, directory, '{}.{}'.format(name, 'pdb'), weight)
+        pdb_pharmacophore(features, directory, '{}.{}'.format(name, 'pdb'))
     if 'pml' in file_formats:
-        pml_pharmacophore(features, directory, '{}.{}'.format(name, 'pml'), weight)
+        pml_pharmacophore(features, directory, '{}.{}'.format(name, 'pml'))
     return
 
 

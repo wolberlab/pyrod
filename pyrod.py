@@ -190,17 +190,12 @@ if __name__ == '__main__':
         pharmacophore_directory = '/'.join([directory, 'pharmacophores'])
         if all_features:
             update_user('Writing pharmacophore with all features to {}.'.format(pharmacophore_directory), logger)
-            pharmacophore_writer(pharmacophore, pharmacophore_formats, 'all', pharmacophore_directory, False, logger)
-            pharmacophore_writer(pharmacophore, pharmacophore_formats, 'all_weighted', pharmacophore_directory, True,
-                                 logger)
+            pharmacophore_writer(pharmacophore, pharmacophore_formats, 'all', pharmacophore_directory, logger)
         if best_features:
             pharmacophore = select_features(pharmacophore, hbs_number, his_number, iis_number, ais_number)
             update_user('Writing pharmacophore with {} features to {}.'.format(len(pharmacophore),
                                                                                pharmacophore_directory), logger)
-            pharmacophore_writer(pharmacophore, pharmacophore_formats, best_name, pharmacophore_directory,
-                                 False, logger)
-            pharmacophore_writer(pharmacophore, pharmacophore_formats, best_name + '_weighted',
-                                 pharmacophore_directory, True, logger)
+            pharmacophore_writer(pharmacophore, pharmacophore_formats, best_name, pharmacophore_directory, logger)
     # library generation
     if config.has_section('library parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('library parameters')]))
