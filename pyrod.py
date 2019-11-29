@@ -26,7 +26,7 @@ try:
         dmif_excess_parameters, centroid_parameters, point_properties_parameters
     from pyrod.pyrod_lib.lookup import logo, __version__, grid_list_dict, feature_types
     from pyrod.pyrod_lib.pharmacophore import generate_exclusion_volumes, generate_features, generate_library
-    from pyrod.pyrod_lib.pharmacophore_helper import select_features, renumber_features
+    from pyrod.pyrod_lib.pharmacophore_helper import renumber_features
     from pyrod.pyrod_lib.read import pickle_reader
     from pyrod.pyrod_lib.trajectory import trajectory_analysis, screen_protein_conformations, ensemble_to_centroid
     from pyrod.pyrod_lib.write import file_path, pdb_grid, dmif_writer, pharmacophore_writer, pickle_writer, \
@@ -39,7 +39,7 @@ except ImportError:
         dmif_excess_parameters, centroid_parameters, point_properties_parameters
     from pyrod_lib.lookup import logo, __version__, grid_list_dict, feature_types
     from pyrod_lib.pharmacophore import generate_exclusion_volumes, generate_features, generate_library
-    from pyrod_lib.pharmacophore_helper import select_features, renumber_features
+    from pyrod_lib.pharmacophore_helper import renumber_features
     from pyrod_lib.read import pickle_reader
     from pyrod_lib.trajectory import trajectory_analysis, screen_protein_conformations, ensemble_to_centroid
     from pyrod_lib.write import file_path, pdb_grid, dmif_writer, pharmacophore_writer, pickle_writer, \
@@ -185,17 +185,11 @@ if __name__ == '__main__':
                                 logger)
         pharmacophore = renumber_features(features + evs)
         evs = [[counter + len(features) + 1] + x[1:] for counter, x in enumerate(evs)]
-        pharmacophore_formats, all_features, best_features, best_name, hbs_number, his_number, iis_number, \
-            ais_number = pharmacophore_parameters(config)
+        pharmacophore_formats = pharmacophore_parameters(config)
         pharmacophore_directory = '/'.join([directory, 'pharmacophores'])
-        if all_features:
-            update_user('Writing pharmacophore with all features to {}.'.format(pharmacophore_directory), logger)
-            pharmacophore_writer(pharmacophore, pharmacophore_formats, 'all', pharmacophore_directory, logger)
-        if best_features:
-            pharmacophore = select_features(pharmacophore, hbs_number, his_number, iis_number, ais_number)
-            update_user('Writing pharmacophore with {} features to {}.'.format(len(pharmacophore),
-                                                                               pharmacophore_directory), logger)
-            pharmacophore_writer(pharmacophore, pharmacophore_formats, best_name, pharmacophore_directory, logger)
+        update_user('Writing pharmacophore with all features to {}.'.format(pharmacophore_directory), logger)
+        pharmacophore_writer(pharmacophore, pharmacophore_formats, 'super_pharmacophore', pharmacophore_directory,
+                             logger)
     # library generation
     if config.has_section('library parameters'):
         logger.debug('\n'.join([': '.join(list(_)) for _ in config.items('library parameters')]))

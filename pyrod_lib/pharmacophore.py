@@ -202,13 +202,13 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
     """ This function writes a combinatorial pharmacophore library. """
     logger = setup_logger('library', directory, debugging)
     update_user('Starting library generation.', logger)
-    super_pharmacophore = pharmacophore_reader(pharmacophore_path, pyrod_pharmacophore, logger)
+    template_pharmacophore = pharmacophore_reader(pharmacophore_path, pyrod_pharmacophore, logger)
     pharmacophore_library = []
     essential_hb, essential_hi, essential_ai, essential_ii = [], [], [], []
     optional_hb, optional_hi, optional_ai, optional_ii = [], [], [], []
     exclusion_volumes = []
     # analyzing pharmacophore
-    for index, feature in enumerate(super_pharmacophore):
+    for index, feature in enumerate(template_pharmacophore):
         if feature[1] == 'ev':
             exclusion_volumes.append(feature)
         else:
@@ -252,12 +252,12 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
                                                      essential_hi + list(his_) +
                                                      essential_ai + list(ais_) +
                                                      essential_ii + list(iis_))
-                                    if evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict,
+                                    if evaluate_pharmacophore(pharmacophore, template_pharmacophore, library_dict,
                                                               pyrod_pharmacophore):
                                         pharmacophore_library.append(pharmacophore)
     # estimate maximal library size and ask user if number and space of pharmacophores is okay
-    pharmacophore_writer(super_pharmacophore, [output_format], 'super_pharmacophore', library_path, logger)
-    pharmacophore_library_size = bytes_to_text(os.path.getsize('{}/{}.{}'.format(library_path, 'super_pharmacophore',
+    pharmacophore_writer(template_pharmacophore, [output_format], 'template_pharmacophore', library_path, logger)
+    pharmacophore_library_size = bytes_to_text(os.path.getsize('{}/{}.{}'.format(library_path, 'template_pharmacophore',
                                                output_format)) * len(pharmacophore_library))
     user_prompt = ''
     while user_prompt not in ['yes', 'no']:
@@ -274,7 +274,7 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
         extra_ev_counter = 1
         pharmacophore = []
         for index_feature in index_pharmacophore:
-            feature = super_pharmacophore[index_feature]
+            feature = template_pharmacophore[index_feature]
             feature[2] = 'M'
             pharmacophore.append(feature)
             if feature[1] in ['ha', 'hd', 'ha2', 'hd2', 'hda']:

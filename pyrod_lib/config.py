@@ -87,26 +87,7 @@ def feature_parameters(config):
 def pharmacophore_parameters(config):
     pharmacophore_formats = [x.strip() for x in config.get('pharmacophore parameters',
                                                            'pharmacophore formats').split(',')]
-    if config.get('pharmacophore parameters', 'all') == 'true':
-        all_features = True
-    else:
-        all_features = False
-    if config.get('pharmacophore parameters', 'best') == 'true':
-        best_features = True
-        best_name = config.get('pharmacophore parameters', 'best name')
-        hbs_number = int(config.get('pharmacophore parameters', 'hydrogen bonding features'))
-        his_number = int(config.get('pharmacophore parameters', 'hydrophobic features'))
-        iis_number = int(config.get('pharmacophore parameters', 'ionizable features'))
-        ais_number = int(config.get('pharmacophore parameters', 'aromatic features'))
-    else:
-        best_features = False
-        best_name = None
-        hbs_number = None
-        his_number = None
-        iis_number = None
-        ais_number = None
-    return [pharmacophore_formats, all_features, best_features, best_name, hbs_number, his_number, iis_number,
-            ais_number]
+    return pharmacophore_formats
 
 
 def library_parameters(config, directory):

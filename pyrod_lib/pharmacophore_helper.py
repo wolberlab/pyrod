@@ -154,18 +154,6 @@ def renumber_features(pharmacophore):
     return [[counter + 1] + x[1:] for counter, x in enumerate(pharmacophore)]
 
 
-def select_features(pharmacophore, hbs_number, his_number, iis_number, ais_number):
-    """ This functions returns a list of best features per feature class. """
-    hbs = sorted([feature for feature in pharmacophore if feature[1] in ['hd', 'ha', 'hd2', 'ha2', 'hda']],
-                 key=operator.itemgetter(7), reverse=True)[:hbs_number]
-    his = [feature for feature in pharmacophore if feature[1] in ['hi']][:his_number]
-    iis = sorted([feature for feature in pharmacophore if feature[1] in ['pi', 'ni']], key=operator.itemgetter(6),
-                 reverse=True)[:iis_number]
-    ais = [feature for feature in pharmacophore if feature[1] in ['ai']][:ais_number]
-    evs = [feature for feature in pharmacophore if feature[1] == 'ev']
-    return hbs + his + iis + ais + evs
-
-
 def evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict, pyrod_pharmacophore):
     """ This function evaluates if a pharmacophore matches the pharmacophore library criteria. """
     positions = []
