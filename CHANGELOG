@@ -1,5 +1,6 @@
  - added point properties component
  - removed weight options for pharmacophore generation
+ - removed make mandatory option in library generation
  - minor changes
 * v0.7.3
  - using feature core tolerance for clashes between features and heavy atoms in centroid generation

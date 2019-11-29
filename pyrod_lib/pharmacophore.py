@@ -197,7 +197,7 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
     return
 
 
-def generate_library(pharmacophore_path, output_format, library_dict, library_path, make_mandatory, pyrod_pharmacophore,
+def generate_library(pharmacophore_path, output_format, library_dict, library_path, pyrod_pharmacophore,
                      directory, debugging):
     """ This function writes a combinatorial pharmacophore library. """
     logger = setup_logger('library', directory, debugging)
@@ -275,8 +275,7 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
         pharmacophore = []
         for index_feature in index_pharmacophore:
             feature = super_pharmacophore[index_feature]
-            if make_mandatory:
-                feature[2] = 'M'
+            feature[2] = 'M'
             pharmacophore.append(feature)
             if feature[1] in ['ha', 'hd', 'ha2', 'hd2', 'hda']:
                 extra_exclusion_volumes.append([maximal_exclusion_volume_id + extra_ev_counter, 'ev', 'M',

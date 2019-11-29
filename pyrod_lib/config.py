@@ -118,9 +118,6 @@ def library_parameters(config, directory):
                       'minimal aromatic interactions', 'maximal aromatic interactions', 
                       'minimal ionizable interactions', 'maximal ionizable interactions']:
         library_dict[parameter] = int(config.get('library parameters', parameter))
-    make_mandatory = False
-    if config.get('library parameters', 'make optional features mandatory') == 'true':
-        make_mandatory = True
     if len(config.get('library parameters', 'library name')) > 0:
         library_name = config.get('library parameters', 'library name')
     else:
@@ -129,7 +126,7 @@ def library_parameters(config, directory):
     pyrod_pharmacophore = True
     if config.get('library parameters', 'pyrod pharmacophore') == 'false':
         pyrod_pharmacophore = False
-    return [pharmacophore_path, output_format, library_dict, library_path, make_mandatory, pyrod_pharmacophore]
+    return [pharmacophore_path, output_format, library_dict, library_path, pyrod_pharmacophore]
 
 
 def dmif_excess_parameters(config):
