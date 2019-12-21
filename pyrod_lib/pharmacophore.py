@@ -20,7 +20,8 @@ try:
     from pyrod.pyrod_lib.lookup import grid_list_dict
     from pyrod.pyrod_lib.math import distance
     from pyrod.pyrod_lib.pharmacophore_helper import get_core_tolerance, get_maximal_core_tolerance, \
-        get_maximal_sum_of_scores, get_partner_positions, get_partner_tolerance, evaluate_pharmacophore
+        get_maximal_sum_of_scores, get_partner_positions, get_partner_tolerance, evaluate_pharmacophore, \
+        combine_features
     from pyrod.pyrod_lib.read import pickle_reader, pharmacophore_reader
     from pyrod.pyrod_lib.write import file_path, setup_logger, pharmacophore_writer, update_progress, update_user, \
         bytes_to_text
@@ -28,7 +29,8 @@ except ImportError:
     from pyrod_lib.lookup import grid_list_dict
     from pyrod_lib.math import distance
     from pyrod_lib.pharmacophore_helper import get_core_tolerance, get_maximal_core_tolerance, \
-        get_maximal_sum_of_scores, get_partner_positions, get_partner_tolerance, evaluate_pharmacophore
+        get_maximal_sum_of_scores, get_partner_positions, get_partner_tolerance, evaluate_pharmacophore, \
+        combine_features
     from pyrod_lib.read import pickle_reader, pharmacophore_reader
     from pyrod_lib.write import file_path, setup_logger, pharmacophore_writer, bytes_to_text, update_progress, \
         update_user
@@ -232,29 +234,23 @@ def generate_library(pharmacophore_path, output_format, library_dict, library_pa
                     optional_ai.append(index)
                 else:
                     essential_ai.append(index)
-    for hbs in [combinations(optional_hb, x) for x in
-                range(library_dict['minimal hydrogen bonds'],
-                      library_dict['maximal hydrogen bonds'] + 1)]:
-        for hbs_ in hbs:
-            for his in [combinations(optional_hi, x) for x in
-                        range(library_dict['minimal hydrophobic interactions'],
-                              library_dict['maximal hydrophobic interactions'] + 1)]:
-                for his_ in his:
-                    for ais in [combinations(optional_ai, x) for x in
-                                range(library_dict['minimal aromatic interactions'],
-                                      library_dict['maximal aromatic interactions'] + 1)]:
-                        for ais_ in ais:
-                            for iis in [combinations(optional_ii, x) for x in
-                                        range(library_dict['minimal ionizable interactions'],
-                                              library_dict['maximal ionizable interactions'] + 1)]:
-                                for iis_ in iis:
-                                    pharmacophore = (essential_hb + list(hbs_) +
-                                                     essential_hi + list(his_) +
-                                                     essential_ai + list(ais_) +
-                                                     essential_ii + list(iis_))
-                                    if evaluate_pharmacophore(pharmacophore, template_pharmacophore, library_dict,
-                                                              pyrod_pharmacophore):
-                                        pharmacophore_library.append(pharmacophore)
+    essential_features = essential_hb + essential_hi + essential_ai + essential_ii
+    for hb_combination in combine_features(optional_hb, library_dict['minimal hydrogen bonds'] - len(essential_hb),
+                                           library_dict['maximal hydrogen bonds'] - len(essential_hb) + 1):
+        for hi_combination in combine_features(optional_hi, library_dict['minimal hydrophobic interactions'] -
+                                               len(essential_hi), library_dict['maximal hydrophobic interactions'] -
+                                               len(essential_hi) + 1):
+            for ai_combination in combine_features(optional_ai, library_dict['minimal aromatic interactions'] -
+                                                   len(essential_ai), library_dict['maximal aromatic interactions'] -
+                                                   len(essential_ai) + 1):
+                for ii_combination in combine_features(optional_ii, library_dict['minimal ionizable interactions'] -
+                                                       len(essential_ii),
+                                                       library_dict['maximal ionizable interactions'] -
+                                                       len(essential_ii) + 1):
+                    pharmacophore = (essential_features + hb_combination + hi_combination + ai_combination +
+                                     ii_combination)
+                    if evaluate_pharmacophore(pharmacophore, template_pharmacophore, library_dict, pyrod_pharmacophore):
+                        pharmacophore_library.append(pharmacophore)
     # estimate maximal library size and ask user if number and space of pharmacophores is okay
     pharmacophore_writer(template_pharmacophore, [output_format], 'template_pharmacophore', library_path, logger)
     pharmacophore_library_size = bytes_to_text(os.path.getsize('{}/{}.{}'.format(library_path, 'template_pharmacophore',

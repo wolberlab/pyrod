@@ -154,7 +154,15 @@ def renumber_features(pharmacophore):
     return [[counter + 1] + x[1:] for counter, x in enumerate(pharmacophore)]
 
 
-def evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict, pyrod_pharmacophore):
+def combine_features(features, minimal, maximal):
+    """ This generator yields feature combinations. """
+    for number in range(minimal, maximal):
+        if number >= 0:
+            for feature_combination in combinations(features, number):
+                yield list(feature_combination)
+
+
+def evaluate_pharmacophore(pharmacophore, template_pharmacophore, library_dict, pyrod_pharmacophore):
     """ This function evaluates if a pharmacophore matches the pharmacophore library criteria. """
     positions = []
     hb_positions = []
@@ -163,7 +171,7 @@ def evaluate_pharmacophore(pharmacophore, super_pharmacophore, library_dict, pyr
     ai_positions = []
     ii_positions = []
     for index in pharmacophore:
-        feature = super_pharmacophore[index]
+        feature = template_pharmacophore[index]
         feature_type = feature[1]
         core_position = feature[3]
         if core_position not in positions:
