@@ -1,3 +1,4 @@
+ - requires python 3.8 if many frames are analyzed with a single process
  - fixed library generation that fails with certain parameters
 * v0.7.4
  - removed best pharmacophore option in pharmacophore generation
