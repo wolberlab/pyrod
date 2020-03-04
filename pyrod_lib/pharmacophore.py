@@ -176,6 +176,7 @@ def generate_features(positions, feature_scores, feature_type, features_per_feat
                     feature_indices = feature_indices_list[0]
             if len(feature_indices) + len(used) > len(set(feature_indices + used)):
                 not_used = [x for x in not_used if x != index]
+                used.append(index)
             else:
                 generated_features.append([index, feature_type, 'M', positions[index], core_tolerance,
                                            get_partner_positions(feature_type, partners[index]),
