@@ -30,9 +30,13 @@ CLASH_CUTOFF = 1.5  # corresponds to the distance between hydrogen and acceptor 
 """ Dictionary for renaming residues to their standard residue name. Can be extended to standardize other residue names.
 Tuples as keys for dictionaries need at least two entries, thus a dummy entry needs to be included if only one element 
 is available (see standard_atomnames_dict). """
-standard_resnames_dict = {('CYM', 'CYX'): 'CYS',
+standard_resnames_dict = {('ARN', 'dummy'): 'ARG',
+                          ('ASH', 'dummy'): 'ASP',
+                          ('CYM', 'CYX'): 'CYS',
+                          ('GLH', 'dummy'): 'GLU',
                           ('HSP', 'HSH', 'HIP', 'HIH', 'HID', 'HIE', 'HSD', 'HSE'): 'HIS',
-                          ('H20', 'WAT', 'SOL', 'TIP3', 'TIP4', 'TIP5', 'T3P', 'T4P', 'T5P', 'SPC'): 'HOH'}
+                          ('H20', 'WAT', 'SOL', 'TIP3', 'TIP4', 'TIP5', 'T3P', 'T4P', 'T5P', 'SPC'): 'HOH',
+                          ('LYN', 'dummy'): 'LYS'}
 """ Tuple of protein residue names. Can be extended to include other residues. """
 protein_resnames = ('ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE',
                     'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL')
