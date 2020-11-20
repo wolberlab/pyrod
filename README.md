@@ -20,8 +20,7 @@ python3 -m pip install --upgrade MDAnalysis
 ```
 You can also use conda to install all dependencies:
 ```bash
-conda config --add conda-forge
-conda create -n pyrod mdanalysis python=3.8
+conda create -n pyrod -c conda-forge mdanalysis python=3.8
 ```
 #### Create alias for your bash
 ```bash
