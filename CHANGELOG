@@ -1,3 +1,4 @@
+ - improved behavior of library_roc_analysis_LS.py script
 * v0.7.5
  - requires python 3.8 if many frames are analyzed with a single process
  - fixed library generation that fails with certain parameters
