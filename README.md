@@ -10,21 +10,12 @@ Open a new terminal and clone this repository
 git clone https://github.com/schallerdavid/pyrod.git ~/pyrod
 ```
 #### Install dependencies
-PyRod is written in python 3.8 and uses MDAnalysis (>= 0.19.0, is shipped with NumPy and SciPy), NumPy and SciPy which can be easily installed using pip:
+PyRod is written in Python 3.8 and relies on MDAnalysis (version >= 0.19.0, which includes NumPy and SciPy), as well as NumPy and SciPy themselves. All dependencies can be easily installed alongside PyRod using pip from within the PyRod directory:
 ```bash
-pip3 install --upgrade MDAnalysis
+cd PATH/TO/pyrod
 ```
-or 
 ```bash
-python3 -m pip install --upgrade MDAnalysis
-```
-You can also use conda to install all dependencies:
-```bash
-conda create -n pyrod -c conda-forge mdanalysis python=3.8
-```
-#### Create alias for your bash
-```bash
-echo 'alias pyrod="python3 ~/pyrod/pyrod.py"' >> ~/.bashrc
+pip install .
 ```
 ## Run PyRod
 #### Load conda environment (optional)
