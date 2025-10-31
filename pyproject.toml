@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=40.8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Self-descriptive entries which should always be present
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+[project]
+name = "pyrod"
+version = "0.7.5"
+description = "Dynamic molecular interaction fields (dMIFs) and pharmacophore features from MD simulations"
+readme = "README.md"
+authors = [
+    { name = "David Schaller" }
+]
+license = { text = "GPL-2.0" }
+# See https://pypi.org/classifiers/
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8,<3.13"
+# Declare any run-time dependencies that should be installed with the package.
+dependencies = [
+    "MDAnalysis>=0.19.0",
+    "numpy>=1.21.0; python_version<'3.10'",
+    "numpy>=1.21.0,<1.27.0; python_version=='3.10' or python_version=='3.11'",
+    "numpy>=1.26.0; python_version>='3.12'",
+    "scipy",
+]
+
+[project.urls]
+"Source" = "https://github.com/wolberlab/pyrod"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=6.1.2",
+  "pytest-runner",
+  "pytest-mock>=3.14.0"
+]
+
+[tool.setuptools]
+# This subkey is a beta stage development and keys may change in the future, see https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
+#
+# As of version 0.971, mypy does not support type checking of installed zipped
+# packages (because it does not actually import the Python packages).
+# We declare the package not-zip-safe so that our type hints are also available
+# when checking client code that uses our (installed) package.
+# Ref:
+# https://mypy.readthedocs.io/en/stable/installed_packages.html?highlight=zip#using-installed-packages-with-mypy-pep-561
+zip-safe = false
+# Let setuptools discover the package in the current directory,
+# but be explicit about non-Python files.
+# See also:
+#   https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html#setuptools-specific-configuration
+# Note that behavior is currently evolving with respect to how to interpret the
+# "data" and "tests" subdirectories. As of setuptools 63, both are automatically
+# included if namespaces is true (default), even if the package is named explicitly
+# (instead of using 'find'). With 'find', the 'tests' subpackage is discovered
+# recursively because of its __init__.py file, but the data subdirectory is excluded
+# with include-package-data = false and namespaces = false.
+include-package-data = true
+py-modules = ["pyrod"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyrod_lib*"]
+
+# Ref https://setuptools.pypa.io/en/latest/userguide/datafiles.html#package-data
+[tool.setuptools.package-data]
+pyrod_lib = [
+    "py.typed"
+]
+
+[project.scripts]
+pyrod = "pyrod:main"

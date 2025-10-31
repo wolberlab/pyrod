@@ -52,11 +52,12 @@ def chunks(iterable, chunk_size):
         yield iterable[i:i + chunk_size]
 
 
-if __name__ == '__main__':
+def main():
+    """ Main function to run PyRod from command line. """
     start_time = time.time()
     parser = argparse.ArgumentParser(prog='PyRod', description='\n'.join(logo),
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('conf', help='path to configuration file')
+    parser.add_argument('conf', help='path to configuration file for PyRod. Configs can be obtained from the configs folder in the pyrod repository.')
     parser.add_argument('--verbose', dest='debugging', action='store_true', help='verbose logging for debugging')
     conf = parser.parse_args().conf
     debugging = parser.parse_args().debugging
@@ -240,3 +241,7 @@ if __name__ == '__main__':
                 ensemble_to_centroid(topology, trajectories, output_name, directory, debugging)
         update_user('Output written to {0}.'.format('/'.join([directory, output_name])), logger)
     update_user('Finished after {}.'.format(time_to_text(time.time() - start_time)), logger)
+
+
+if __name__ == '__main__':
+    main()
